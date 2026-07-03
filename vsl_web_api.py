@@ -83,7 +83,24 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
         self.end_headers()
 
     def do_GET(self) -> None:
-        if self.path == "/api/vsl/health":
+        parsed_path = urllib.parse.urlparse(self.path).path.rstrip("/") or "/"
+
+        if parsed_path == "/":
+            model_ready = STATE_PATH.exists() and LABELS_PATH.exists()
+            self.send_json(
+                {
+                    "ok": True,
+                    "service": "SignLink VSL API",
+                    "health": "/api/vsl/health",
+                    "predictVideo": "/api/vsl/predict-video",
+                    "dictionarySearch": "/api/dictionary/search?text=hoc",
+                    "textToSign": "/api/text-to-sign?text=toi%20di%20hoc",
+                    "modelReady": model_ready,
+                }
+            )
+            return
+
+        if parsed_path == "/api/vsl/health":
             model_ready = STATE_PATH.exists() and LABELS_PATH.exists()
             self.send_json(
                 {
