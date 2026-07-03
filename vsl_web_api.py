@@ -820,6 +820,13 @@ def normalize_dictionary_item(item: dict[str, Any]) -> dict[str, Any]:
 def main() -> None:
     print(f"[*] SignLink VSL API: http://{HOST}:{PORT}")
     print("[*] Health check: /api/vsl/health")
+    if os.environ.get("PRELOAD_MODEL", "1") == "1":
+        try:
+            log_event("startup: preloading transformer runtime")
+            get_runtime()
+            log_event("startup: transformer runtime preloaded")
+        except Exception as exc:
+            log_event(f"startup: preload failed: {exc}")
     print("[*] Press Ctrl+C to stop")
     server = ThreadingHTTPServer((HOST, PORT), VSLRequestHandler)
     try:

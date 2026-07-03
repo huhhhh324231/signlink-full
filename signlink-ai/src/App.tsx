@@ -144,6 +144,7 @@ export default function App() {
   const streamRef = useRef<MediaStream | null>(null);
   const recorderRef = useRef<MediaRecorder | null>(null);
   const chunksRef = useRef<BlobPart[]>([]);
+  const isAnalyzingRef = useRef(false);
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const handTrackFrameRef = useRef<number | null>(null);
   const recordingTimeoutRef = useRef<number | null>(null);
@@ -156,6 +157,10 @@ export default function App() {
   const sentenceText = result?.sentence || result?.words?.map((word) => word.label).join(' ') || '';
   const recordingLabel = isRecording ? 'Đang quay.' : isCameraActive ? 'Camera sẵn sàng.' : 'Camera tắt.';
 
+  useEffect(() => {
+    isAnalyzingRef.current = isAnalyzing;
+  }, [isAnalyzing]);
+
   const confidenceText = useMemo(() => {
     if (result?.mode === 'sentence') return `${result.words?.length ?? 0} tu`;
     if (!bestPrediction) return '--';
@@ -165,8 +170,8 @@ export default function App() {
   useEffect(() => {
     void checkBackend();
     const timer = window.setInterval(() => {
-      void checkBackend(false);
-    }, 10000);
+      if (!isAnalyzingRef.current) void checkBackend(false);
+    }, 30000);
     return () => {
       window.clearInterval(timer);
       if (recordingTimeoutRef.current !== null) {
