@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: signlink-vsl-api
+    env: python
+    plan: starter
+    buildCommand: pip install -r requirements-deploy.txt
+    startCommand: python vsl_web_api.py
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: CORS_ALLOW_ORIGIN
+        value: "*"

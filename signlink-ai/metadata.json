@@ -1,0 +1,5 @@
+{
+  "name": "SignLink AI",
+  "description": "Real-time English Sign Language recognition and translation app for seamless communication.",
+  "requestFramePermissions": ["camera"]
+}
