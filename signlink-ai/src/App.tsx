@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
   AlertCircle,
@@ -110,16 +110,16 @@ const API_BASES = [
   'http://127.0.0.1:8008',
   'http://localhost:8008',
 ];
-const TEXT_TO_SIGN_SUGGESTIONS = ['bạn đi học', 'tôi yêu gia đình', 'xin chào', 'cảm ơn bạn'];
-const DICTIONARY_QUICK_SEARCHES = ['học', 'gia đình', 'bạn', 'cảm ơn', 'xin chào'];
+const TEXT_TO_SIGN_SUGGESTIONS = ['báº¡n Ä‘i há»c', 'tÃ´i yÃªu gia Ä‘Ã¬nh', 'xin chÃ o', 'cáº£m Æ¡n báº¡n'];
+const DICTIONARY_QUICK_SEARCHES = ['há»c', 'gia Ä‘Ã¬nh', 'báº¡n', 'cáº£m Æ¡n', 'xin chÃ o'];
 
 export default function App() {
   const [isBackendReady, setIsBackendReady] = useState(false);
-  const [backendText, setBackendText] = useState('Đang kiểm tra backend local...');
+  const [backendText, setBackendText] = useState('Äang kiá»ƒm tra backend local...');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [status, setStatus] = useState('Sẵn sàng nhận diện từ bằng video.');
+  const [status, setStatus] = useState('Sáºµn sÃ ng nháº­n diá»‡n tá»« báº±ng video.');
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [result, setResult] = useState<ApiResponse | null>(null);
   const [apiBase, setApiBase] = useState(API_BASES[0]);
@@ -128,15 +128,16 @@ export default function App() {
   const [dictionaryTopic, setDictionaryTopic] = useState('');
   const [dictionaryItems, setDictionaryItems] = useState<DictionaryItem[]>([]);
   const [dictionaryTopics, setDictionaryTopics] = useState<string[]>([]);
-  const [dictionaryStatus, setDictionaryStatus] = useState('Nhập từ khóa để tra cứu từ điển.');
+  const [dictionaryStatus, setDictionaryStatus] = useState('Nháº­p tá»« khÃ³a Ä‘á»ƒ tra cá»©u tá»« Ä‘iá»ƒn.');
   const [selectedDictionaryItem, setSelectedDictionaryItem] = useState<DictionaryItem | null>(null);
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(false);
-  const [textToSignInput, setTextToSignInput] = useState('bạn đi học');
+  const [textToSignInput, setTextToSignInput] = useState('báº¡n Ä‘i há»c');
   const [textToSignWords, setTextToSignWords] = useState<TextToSignWord[]>([]);
-  const [textToSignStatus, setTextToSignStatus] = useState('Nhập câu tiếng Việt để phát chuỗi video ký hiệu.');
+  const [textToSignStatus, setTextToSignStatus] = useState('Nháº­p cÃ¢u tiáº¿ng Viá»‡t Ä‘á»ƒ phÃ¡t chuá»—i video kÃ½ hiá»‡u.');
   const [isTextToSignLoading, setIsTextToSignLoading] = useState(false);
   const [currentSignIndex, setCurrentSignIndex] = useState(0);
   const [handTrackText, setHandTrackText] = useState('Handtrack chua bat.');
+  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const handCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -148,12 +149,13 @@ export default function App() {
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const handTrackFrameRef = useRef<number | null>(null);
   const lastVideoTimeRef = useRef(-1);
+  const lastScrollYRef = useRef(0);
   const dictionaryResultCacheRef = useRef(new Map<string, DictionaryResponse>());
   const textToSignResultCacheRef = useRef(new Map<string, TextToSignResponse>());
 
   const bestPrediction = result?.predictions?.[0] ?? null;
   const sentenceText = result?.sentence || result?.words?.map((word) => word.label).join(' ') || '';
-  const recordingLabel = isRecording ? 'Đang quay.' : isCameraActive ? 'Camera sẵn sàng.' : 'Camera tắt.';
+  const recordingLabel = isRecording ? 'Äang quay.' : isCameraActive ? 'Camera sáºµn sÃ ng.' : 'Camera táº¯t.';
 
   const confidenceText = useMemo(() => {
     if (result?.mode === 'sentence') return `${result.words?.length ?? 0} tu`;
@@ -174,6 +176,28 @@ export default function App() {
     };
   }, []);
 
+  useEffect(() => {
+    lastScrollYRef.current = window.scrollY;
+
+    function handleScroll() {
+      const currentScrollY = window.scrollY;
+      const scrollDelta = currentScrollY - lastScrollYRef.current;
+
+      if (currentScrollY < 24) {
+        setIsHeaderHidden(false);
+      } else if (scrollDelta > 8) {
+        setIsHeaderHidden(true);
+      } else if (scrollDelta < -8) {
+        setIsHeaderHidden(false);
+      }
+
+      lastScrollYRef.current = currentScrollY;
+    }
+
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
   async function checkBackend(showFailure = true) {
     for (const base of API_BASES) {
       try {
@@ -181,7 +205,7 @@ export default function App() {
         const data = await response.json();
         setApiBase(base);
         setIsBackendReady(Boolean(data.ok));
-        setBackendText(data.ok ? `Backend local sẵn sàng (${data.device}).` : 'Backend chưa sẵn sàng model.');
+        setBackendText(data.ok ? `Backend local sáºµn sÃ ng (${data.device}).` : 'Backend chÆ°a sáºµn sÃ ng model.');
         return;
       } catch {
         // Try the next localhost variant.
@@ -190,13 +214,13 @@ export default function App() {
 
     setIsBackendReady(false);
     if (showFailure) {
-      setBackendText('Đang đợi Python API local khởi động...');
+      setBackendText('Äang Ä‘á»£i Python API local khá»Ÿi Ä‘á»™ng...');
     }
   }
 
   async function startCamera() {
     setResult(null);
-    setStatus('Đang xin quyền camera...');
+    setStatus('Äang xin quyá»n camera...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
@@ -211,9 +235,9 @@ export default function App() {
       }
       setIsCameraActive(true);
       void startHandTracking();
-      setStatus('Camera đã bật. Bấm “Bắt đầu quay” để ghi một từ hoặc một câu ký hiệu.');
+      setStatus('Camera Ä‘Ã£ báº­t. Báº¥m â€œBáº¯t Ä‘áº§u quayâ€ Ä‘á»ƒ ghi má»™t tá»« hoáº·c má»™t cÃ¢u kÃ½ hiá»‡u.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'Không mở được camera.');
+      setStatus(error instanceof Error ? error.message : 'KhÃ´ng má»Ÿ Ä‘Æ°á»£c camera.');
     }
   }
 
@@ -234,7 +258,7 @@ export default function App() {
   async function getHandLandmarker() {
     if (handLandmarkerRef.current) return handLandmarkerRef.current;
 
-    setHandTrackText('Đang tải handtrack local...');
+    setHandTrackText('Äang táº£i handtrack local...');
     const vision = await FilesetResolver.forVisionTasks('/wasm');
     const landmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
@@ -267,7 +291,7 @@ export default function App() {
           lastVideoTimeRef.current = video.currentTime;
           const result = landmarker.detectForVideo(video, performance.now());
           drawHandTrack(canvas, result.landmarks ?? []);
-          setHandTrackText(result.landmarks?.length ? `Đang bắt ${result.landmarks.length} bàn tay.` : 'Chưa thấy bàn tay.');
+          setHandTrackText(result.landmarks?.length ? `Äang báº¯t ${result.landmarks.length} bÃ n tay.` : 'ChÆ°a tháº¥y bÃ n tay.');
         }
 
         handTrackFrameRef.current = window.requestAnimationFrame(track);
@@ -278,7 +302,7 @@ export default function App() {
       }
       handTrackFrameRef.current = window.requestAnimationFrame(track);
     } catch (error) {
-      setHandTrackText(error instanceof Error ? error.message : 'Không bật được handtrack.');
+      setHandTrackText(error instanceof Error ? error.message : 'KhÃ´ng báº­t Ä‘Æ°á»£c handtrack.');
     }
   }
 
@@ -299,7 +323,7 @@ export default function App() {
   function startRecording() {
     const stream = streamRef.current;
     if (!stream) {
-      setStatus('Hãy bật camera trước khi quay.');
+      setStatus('HÃ£y báº­t camera trÆ°á»›c khi quay.');
       return;
     }
 
@@ -325,19 +349,19 @@ export default function App() {
 
     recorder.start();
     setIsRecording(true);
-    setStatus('Đang quay. Hãy thực hiện trọn vẹn ký hiệu, rồi bấm “Dừng quay”.');
+    setStatus('Äang quay. HÃ£y thá»±c hiá»‡n trá»n váº¹n kÃ½ hiá»‡u, rá»“i báº¥m â€œDá»«ng quayâ€.');
   }
 
   function stopRecording() {
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === 'inactive') return;
-    setStatus('Đang dừng quay và gửi video sang model...');
+    setStatus('Äang dá»«ng quay vÃ  gá»­i video sang model...');
     recorder.stop();
   }
 
   async function analyzeBlob(blob: Blob, filename: string) {
     setIsAnalyzing(true);
-    setStatus('Đang trích xuất landmarks và nhận diện...');
+    setStatus('Äang trÃ­ch xuáº¥t landmarks vÃ  nháº­n diá»‡n...');
     try {
       const formData = new FormData();
       formData.append('video', blob, filename);
@@ -348,10 +372,10 @@ export default function App() {
       });
       const data = (await response.json()) as ApiResponse;
       setResult(data);
-      setStatus(data.ok ? `Đã phân tích ${data.validFrames ?? 0} frame hợp lệ.` : data.error ?? 'Nhận diện thất bại.');
+      setStatus(data.ok ? `ÄÃ£ phÃ¢n tÃ­ch ${data.validFrames ?? 0} frame há»£p lá»‡.` : data.error ?? 'Nháº­n diá»‡n tháº¥t báº¡i.');
     } catch (error) {
-      setResult({ ok: false, error: 'Không gọi được Python API local.' });
-      setStatus(error instanceof Error ? error.message : 'Không gọi được Python API local.');
+      setResult({ ok: false, error: 'KhÃ´ng gá»i Ä‘Æ°á»£c Python API local.' });
+      setStatus(error instanceof Error ? error.message : 'KhÃ´ng gá»i Ä‘Æ°á»£c Python API local.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -376,7 +400,7 @@ export default function App() {
     setDictionaryItems([]);
     setDictionaryTopics([]);
     setSelectedDictionaryItem(null);
-    setDictionaryStatus(text ? 'Đang tra cứu từ điển...' : 'Hãy nhập từ khóa để tra cứu.');
+    setDictionaryStatus(text ? 'Äang tra cá»©u tá»« Ä‘iá»ƒn...' : 'HÃ£y nháº­p tá»« khÃ³a Ä‘á»ƒ tra cá»©u.');
     if (!text) {
       setIsDictionaryLoading(false);
       return;
@@ -387,7 +411,7 @@ export default function App() {
       setDictionaryItems(cached.items ?? []);
       setDictionaryTopics(cached.topics ?? []);
       setSelectedDictionaryItem(cached.items?.[0] ?? null);
-      setDictionaryStatus(`TÃ¬m tháº¥y ${cached.total ?? 0} káº¿t quáº£ tá»« bá»™ nhá»› Ä‘á»‡m.`);
+      setDictionaryStatus(`TÃƒÂ¬m thÃ¡ÂºÂ¥y ${cached.total ?? 0} kÃ¡ÂºÂ¿t quÃ¡ÂºÂ£ tÃ¡Â»Â« bÃ¡Â»â„¢ nhÃ¡Â»â€º Ã„â€˜Ã¡Â»â€¡m.`);
       setIsDictionaryLoading(false);
       return;
     }
@@ -405,11 +429,11 @@ export default function App() {
       setDictionaryItems(data.items ?? []);
       setDictionaryTopics(data.topics ?? []);
       setSelectedDictionaryItem(data.items?.[0] ?? null);
-      setDictionaryStatus(`Tìm thấy ${data.total ?? 0} kết quả. Các từ trùng với QIPEDC đã được bỏ qua.`);
+      setDictionaryStatus(`TÃ¬m tháº¥y ${data.total ?? 0} káº¿t quáº£. CÃ¡c tá»« trÃ¹ng vá»›i QIPEDC Ä‘Ã£ Ä‘Æ°á»£c bá» qua.`);
     } catch (error) {
       setDictionaryItems([]);
       setSelectedDictionaryItem(null);
-      setDictionaryStatus(error instanceof Error ? error.message : 'Không tra cứu được từ điển.');
+      setDictionaryStatus(error instanceof Error ? error.message : 'KhÃ´ng tra cá»©u Ä‘Æ°á»£c tá»« Ä‘iá»ƒn.');
     } finally {
       setIsDictionaryLoading(false);
     }
@@ -426,22 +450,22 @@ export default function App() {
     if (!text) {
       setTextToSignWords([]);
       setCurrentSignIndex(0);
-      setTextToSignStatus('Hãy nhập một câu ngắn để tạo video ký hiệu.');
+      setTextToSignStatus('HÃ£y nháº­p má»™t cÃ¢u ngáº¯n Ä‘á»ƒ táº¡o video kÃ½ hiá»‡u.');
       return;
     }
 
     setIsTextToSignLoading(true);
     setTextToSignWords([]);
     setCurrentSignIndex(0);
-    setTextToSignStatus('Đang tách từ và tìm video từ các nguồn từ điển...');
+    setTextToSignStatus('Äang tÃ¡ch tá»« vÃ  tÃ¬m video tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn...');
     const cacheKey = text.toLocaleLowerCase('vi');
     const cached = textToSignResultCacheRef.current.get(cacheKey);
     if (cached) {
       const words = cached.words ?? [];
       setTextToSignWords(words);
       setCurrentSignIndex(0);
-      const missing = cached.missing?.length ? ` Thiáº¿u: ${cached.missing.join(', ')}.` : '';
-      setTextToSignStatus(`GhÃ©p Ä‘Æ°á»£c ${cached.matchedCount ?? 0}/${words.length} tá»« tá»« bá»™ nhá»› Ä‘á»‡m.${missing}`);
+      const missing = cached.missing?.length ? ` ThiÃ¡ÂºÂ¿u: ${cached.missing.join(', ')}.` : '';
+      setTextToSignStatus(`GhÃƒÂ©p Ã„â€˜Ã†Â°Ã¡Â»Â£c ${cached.matchedCount ?? 0}/${words.length} tÃ¡Â»Â« tÃ¡Â»Â« bÃ¡Â»â„¢ nhÃ¡Â»â€º Ã„â€˜Ã¡Â»â€¡m.${missing}`);
       setIsTextToSignLoading(false);
       return;
     }
@@ -450,19 +474,19 @@ export default function App() {
       const response = await fetch(`${apiBase}/api/text-to-sign?${params.toString()}`);
       const data = (await response.json()) as TextToSignResponse;
       if (!data.ok) {
-        throw new Error(data.error || 'Không tạo được chuỗi ký hiệu.');
+        throw new Error(data.error || 'KhÃ´ng táº¡o Ä‘Æ°á»£c chuá»—i kÃ½ hiá»‡u.');
       }
 
       textToSignResultCacheRef.current.set(cacheKey, data);
       const words = data.words ?? [];
       setTextToSignWords(words);
       setCurrentSignIndex(0);
-      const missing = data.missing?.length ? ` Thiếu: ${data.missing.join(', ')}.` : '';
-      setTextToSignStatus(`Ghép được ${data.matchedCount ?? 0}/${words.length} từ thành video ký hiệu.${missing}`);
+      const missing = data.missing?.length ? ` Thiáº¿u: ${data.missing.join(', ')}.` : '';
+      setTextToSignStatus(`GhÃ©p Ä‘Æ°á»£c ${data.matchedCount ?? 0}/${words.length} tá»« thÃ nh video kÃ½ hiá»‡u.${missing}`);
     } catch (error) {
       setTextToSignWords([]);
       setCurrentSignIndex(0);
-      setTextToSignStatus(error instanceof Error ? error.message : 'Không tạo được chuỗi ký hiệu.');
+      setTextToSignStatus(error instanceof Error ? error.message : 'KhÃ´ng táº¡o Ä‘Æ°á»£c chuá»—i kÃ½ hiá»‡u.');
     } finally {
       setIsTextToSignLoading(false);
     }
@@ -521,7 +545,7 @@ export default function App() {
     <div className="min-h-screen bg-white text-slate-900">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.14),transparent_32%),linear-gradient(180deg,#ffffff_0%,#eff6ff_48%,#ffffff_100%)]" />
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-5">
-        <header className="sticky top-4 z-40 flex flex-col gap-4 rounded-3xl border border-white/70 bg-white/85 px-5 py-4 shadow-xl shadow-blue-900/5 backdrop-blur-xl lg:flex-row lg:items-center lg:justify-between">
+        <header className={`sticky top-4 z-40 flex flex-col gap-4 rounded-3xl border border-white/70 bg-white/85 px-5 py-4 shadow-xl shadow-blue-900/5 backdrop-blur-xl transition-all duration-500 ease-out lg:flex-row lg:items-center lg:justify-between ${isHeaderHidden ? 'pointer-events-none -translate-y-28 opacity-0' : 'translate-y-0 opacity-100'}`}>
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-900/10 ring-1 ring-blue-100">
               <img
@@ -532,16 +556,15 @@ export default function App() {
             </div>
             <div>
               <h1 className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-2xl font-black text-transparent">SignLink Language</h1>
-              <p className="text-sm text-slate-500">Nhận diện 472 từ, ghép câu và phát video ký hiệu từ từ điển.</p>
+              <p className="text-sm text-slate-500">Nháº­n diá»‡n 472 tá»«, ghÃ©p cÃ¢u vÃ  phÃ¡t video kÃ½ hiá»‡u tá»« tá»« Ä‘iá»ƒn.</p>
             </div>
           </div>
 
           <nav className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-600">
-            <a href="#home" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Trang chủ</a>
-            <a href="#thuc-trang" className="rounded-2xl px-3 py-2 transition hover:bg-rose-50 hover:text-rose-700">Thực trạng</a>
-            <a href="#nhan-dien" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Nhận diện</a>
-            <a href="#text-to-sign" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Text sang ký hiệu</a>
-            <a href="#tu-dien" className="rounded-2xl px-3 py-2 transition hover:bg-violet-50 hover:text-violet-700">Từ điển</a>
+            <a href="#home" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Trang chá»§</a>
+            <a href="#nhan-dien" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Nháº­n diá»‡n</a>
+            <a href="#text-to-sign" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Text sang kÃ½ hiá»‡u</a>
+            <a href="#tu-dien" className="rounded-2xl px-3 py-2 transition hover:bg-violet-50 hover:text-violet-700">Tá»« Ä‘iá»ƒn</a>
           </nav>
 
           <button
@@ -561,25 +584,25 @@ export default function App() {
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700">
                 <HeartHandshake className="h-4 w-4" />
-                Vì cộng đồng người điếc và khiếm thính Việt Nam.
+                VÃ¬ cá»™ng Ä‘á»“ng ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh Viá»‡t Nam.
               </div>
               <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl lg:text-6xl">
-                Cầu nối AI cho{' '}
+                Cáº§u ná»‘i AI cho{' '}
                 <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                  ngôn ngữ ký hiệu Việt Nam
+                  ngÃ´n ngá»¯ kÃ½ hiá»‡u Viá»‡t Nam
                 </span>
               </h2>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
-                Một web local để nhận diện từ/câu ký hiệu, tra cứu video minh họa và chuyển văn bản thành chuỗi video ký hiệu từ các nguồn từ điển.
+                Má»™t web local Ä‘á»ƒ nháº­n diá»‡n tá»«/cÃ¢u kÃ½ hiá»‡u, tra cá»©u video minh há»a vÃ  chuyá»ƒn vÄƒn báº£n thÃ nh chuá»—i video kÃ½ hiá»‡u tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#nhan-dien" className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-6 py-3 text-sm font-black text-white shadow-xl shadow-blue-400/25 transition hover:scale-[1.02]">
                   <Camera className="h-4 w-4" />
-                  Bắt đầu nhận diện
+                  Báº¯t Ä‘áº§u nháº­n diá»‡n
                 </a>
                 <a href="#tu-dien" className="inline-flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-6 py-3 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-50">
                   <BookOpen className="h-4 w-4" />
-                  Mở từ điển
+                  Má»Ÿ tá»« Ä‘iá»ƒn
                 </a>
               </div>
             </div>
@@ -597,14 +620,14 @@ export default function App() {
                     />
                   </div>
                   <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
-                    {isBackendReady ? 'API sẵn sàng.' : 'Đang đợi API.'}
+                    {isBackendReady ? 'API sáºµn sÃ ng.' : 'Äang Ä‘á»£i API.'}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
-                    { label: 'Nhận diện', value: '472 từ', icon: Camera },
-                    { label: 'Chế độ câu', value: 'Cắt & ghép', icon: Sparkles },
-                    { label: 'Từ điển', value: '2 nguồn', icon: BookOpen },
+                    { label: 'Nháº­n diá»‡n', value: '472 tá»«', icon: Camera },
+                    { label: 'Cháº¿ Ä‘á»™ cÃ¢u', value: 'Cáº¯t & ghÃ©p', icon: Sparkles },
+                    { label: 'Tá»« Ä‘iá»ƒn', value: '2 nguá»“n', icon: BookOpen },
                     { label: 'Text-to-Sign', value: 'Longest phrase', icon: Type },
                   ].map((item) => {
                     const Icon = item.icon;
@@ -626,13 +649,13 @@ export default function App() {
           <div className="mb-8 text-center">
             <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-black text-rose-700">
               <AlertCircle className="h-4 w-4" />
-              Thực trạng và mục tiêu
+              Thá»±c tráº¡ng vÃ  má»¥c tiÃªu
             </div>
             <h2 className="mx-auto max-w-4xl text-3xl font-black leading-tight text-slate-950 md:text-4xl">
-              Hỗ trợ ngôn ngữ cho người điếc và khiếm thính.
+              Há»— trá»£ ngÃ´n ngá»¯ cho ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh.
             </h2>
             <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
-              Ngôn ngữ ký hiệu là cầu nối quan trọng để người điếc và khiếm thính học tập, giao tiếp và tham gia đời sống xã hội. Tuy nhiên, không phải ai cũng có điều kiện tiếp cận người phiên dịch, tài liệu học phù hợp hoặc công cụ hỗ trợ giao tiếp tức thời.
+              NgÃ´n ngá»¯ kÃ½ hiá»‡u lÃ  cáº§u ná»‘i quan trá»ng Ä‘á»ƒ ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh há»c táº­p, giao tiáº¿p vÃ  tham gia Ä‘á»i sá»‘ng xÃ£ há»™i. Tuy nhiÃªn, khÃ´ng pháº£i ai cÅ©ng cÃ³ Ä‘iá»u kiá»‡n tiáº¿p cáº­n ngÆ°á»i phiÃªn dá»‹ch, tÃ i liá»‡u há»c phÃ¹ há»£p hoáº·c cÃ´ng cá»¥ há»— trá»£ giao tiáº¿p tá»©c thá»i.
             </p>
           </div>
 
@@ -641,9 +664,9 @@ export default function App() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 text-white shadow-lg shadow-rose-400/20">
                 <AlertCircle className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-black text-slate-950">Khoảng cách giao tiếp.</h3>
+              <h3 className="text-lg font-black text-slate-950">Khoáº£ng cÃ¡ch giao tiáº¿p.</h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                Người nghe thường chưa biết ngôn ngữ ký hiệu, trong khi người điếc và khiếm thính cần một phương thức biểu đạt tự nhiên, nhanh và dễ hiểu trong học tập, dịch vụ công, y tế và sinh hoạt hằng ngày.
+                NgÆ°á»i nghe thÆ°á»ng chÆ°a biáº¿t ngÃ´n ngá»¯ kÃ½ hiá»‡u, trong khi ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh cáº§n má»™t phÆ°Æ¡ng thá»©c biá»ƒu Ä‘áº¡t tá»± nhiÃªn, nhanh vÃ  dá»… hiá»ƒu trong há»c táº­p, dá»‹ch vá»¥ cÃ´ng, y táº¿ vÃ  sinh hoáº¡t háº±ng ngÃ y.
               </p>
             </div>
 
@@ -651,9 +674,9 @@ export default function App() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-400/20">
                 <Users className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-black text-slate-950">Tiếp cận ngôn ngữ sớm.</h3>
+              <h3 className="text-lg font-black text-slate-950">Tiáº¿p cáº­n ngÃ´n ngá»¯ sá»›m.</h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                Việc học và tra cứu ký hiệu cần trực quan, có video minh họa và dễ dùng trên thiết bị cá nhân. Hệ thống hướng đến việc giúp người học, gia đình và giáo viên có thêm công cụ hỗ trợ tại chỗ.
+                Viá»‡c há»c vÃ  tra cá»©u kÃ½ hiá»‡u cáº§n trá»±c quan, cÃ³ video minh há»a vÃ  dá»… dÃ¹ng trÃªn thiáº¿t bá»‹ cÃ¡ nhÃ¢n. Há»‡ thá»‘ng hÆ°á»›ng Ä‘áº¿n viá»‡c giÃºp ngÆ°á»i há»c, gia Ä‘Ã¬nh vÃ  giÃ¡o viÃªn cÃ³ thÃªm cÃ´ng cá»¥ há»— trá»£ táº¡i chá»—.
               </p>
             </div>
 
@@ -661,9 +684,9 @@ export default function App() {
               <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-400/20">
                 <Target className="h-6 w-6" />
               </div>
-              <h3 className="text-lg font-black text-slate-950">Mục tiêu của SignLink.</h3>
+              <h3 className="text-lg font-black text-slate-950">Má»¥c tiÃªu cá»§a SignLink.</h3>
               <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                SignLink hướng đến hỗ trợ nhận diện ký hiệu, ghép câu, tra cứu từ điển và chuyển văn bản thành chuỗi video ký hiệu, giúp giảm rào cản giao tiếp giữa người điếc, khiếm thính và cộng đồng người nghe.
+                SignLink hÆ°á»›ng Ä‘áº¿n há»— trá»£ nháº­n diá»‡n kÃ½ hiá»‡u, ghÃ©p cÃ¢u, tra cá»©u tá»« Ä‘iá»ƒn vÃ  chuyá»ƒn vÄƒn báº£n thÃ nh chuá»—i video kÃ½ hiá»‡u, giÃºp giáº£m rÃ o cáº£n giao tiáº¿p giá»¯a ngÆ°á»i Ä‘iáº¿c, khiáº¿m thÃ­nh vÃ  cá»™ng Ä‘á»“ng ngÆ°á»i nghe.
               </p>
             </div>
           </div>
@@ -678,8 +701,8 @@ export default function App() {
                 {!isCameraActive && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 px-6 text-center text-white">
                     <Camera className="h-16 w-16 text-cyan-300 opacity-80" />
-                    <p className="mt-4 text-xl font-bold">Bật camera để quay ký hiệu.</p>
-                    <p className="mt-2 max-w-lg text-sm text-slate-300">Model word-level cần một chuỗi hành động rõ ràng, vì vậy hãy quay trọn vẹn một từ hoặc một câu ngắn.</p>
+                    <p className="mt-4 text-xl font-bold">Báº­t camera Ä‘á»ƒ quay kÃ½ hiá»‡u.</p>
+                    <p className="mt-2 max-w-lg text-sm text-slate-300">Model word-level cáº§n má»™t chuá»—i hÃ nh Ä‘á»™ng rÃµ rÃ ng, vÃ¬ váº­y hÃ£y quay trá»n váº¹n má»™t tá»« hoáº·c má»™t cÃ¢u ngáº¯n.</p>
                   </div>
                 )}
                 <div className="absolute left-4 top-4 rounded-2xl bg-black/65 px-3 py-2 text-sm font-bold text-white backdrop-blur">
@@ -692,17 +715,17 @@ export default function App() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <ActionButton icon={<Camera className="h-5 w-5" />} label="Bật camera" disabled={isCameraActive} onClick={startCamera} />
-              <ActionButton icon={<Play className="h-5 w-5" />} label="Bắt đầu quay" disabled={!isCameraActive || isRecording} onClick={startRecording} />
-              <ActionButton icon={<Square className="h-5 w-5" />} label="Dừng quay" disabled={!isRecording} onClick={stopRecording} />
-              <ActionButton icon={<XCircle className="h-5 w-5" />} label="Tắt camera" disabled={!isCameraActive} onClick={stopCamera} />
+              <ActionButton icon={<Camera className="h-5 w-5" />} label="Báº­t camera" disabled={isCameraActive} onClick={startCamera} />
+              <ActionButton icon={<Play className="h-5 w-5" />} label="Báº¯t Ä‘áº§u quay" disabled={!isCameraActive || isRecording} onClick={startRecording} />
+              <ActionButton icon={<Square className="h-5 w-5" />} label="Dá»«ng quay" disabled={!isRecording} onClick={stopRecording} />
+              <ActionButton icon={<XCircle className="h-5 w-5" />} label="Táº¯t camera" disabled={!isCameraActive} onClick={stopCamera} />
             </div>
 
             <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-xl shadow-blue-900/5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Chế độ nhận diện.</h2>
-                  <p className="text-sm text-slate-600">Chế độ câu sẽ tách video theo khoảng nghỉ, nhận diện từng từ và ghép thành câu.</p>
+                  <h2 className="text-lg font-black text-slate-900">Cháº¿ Ä‘á»™ nháº­n diá»‡n.</h2>
+                  <p className="text-sm text-slate-600">Cháº¿ Ä‘á»™ cÃ¢u sáº½ tÃ¡ch video theo khoáº£ng nghá»‰, nháº­n diá»‡n tá»«ng tá»« vÃ  ghÃ©p thÃ nh cÃ¢u.</p>
                 </div>
                 <div className="inline-flex rounded-2xl border border-blue-100 bg-blue-50 p-1">
                   <button
@@ -710,14 +733,14 @@ export default function App() {
                     onClick={() => setRecognitionMode('word')}
                     className={`rounded-xl px-4 py-2 text-sm font-bold transition ${recognitionMode === 'word' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-blue-700'}`}
                   >
-                    Từ đơn
+                    Tá»« Ä‘Æ¡n
                   </button>
                   <button
                     type="button"
                     onClick={() => setRecognitionMode('sentence')}
                     className={`rounded-xl px-4 py-2 text-sm font-bold transition ${recognitionMode === 'sentence' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-blue-700'}`}
                   >
-                    Câu
+                    CÃ¢u
                   </button>
                 </div>
               </div>
@@ -726,8 +749,8 @@ export default function App() {
             <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-xl shadow-blue-900/5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Upload video có sẵn.</h2>
-                  <p className="text-sm text-slate-600">Chọn file MP4, AVI, MOV, MKV hoặc WEBM để backend local xử lý.</p>
+                  <h2 className="text-lg font-black text-slate-900">Upload video cÃ³ sáºµn.</h2>
+                  <p className="text-sm text-slate-600">Chá»n file MP4, AVI, MOV, MKV hoáº·c WEBM Ä‘á»ƒ backend local xá»­ lÃ½.</p>
                 </div>
                 <div className="flex gap-2">
                   <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleUpload} />
@@ -737,7 +760,7 @@ export default function App() {
                     className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-400/20 transition hover:scale-[1.02]"
                   >
                     <Upload className="h-4 w-4" />
-                    Chọn video
+                    Chá»n video
                   </button>
                 </div>
               </div>
@@ -761,8 +784,8 @@ export default function App() {
                     <Type className="h-3.5 w-3.5" />
                     Text to Sign
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900">Text sang video ký hiệu.</h2>
-                  <p className="text-sm text-slate-600">Nhập một câu ngắn, hệ thống sẽ tách từ và phát lần lượt video từ các nguồn từ điển.</p>
+                  <h2 className="text-2xl font-black text-slate-900">Text sang video kÃ½ hiá»‡u.</h2>
+                  <p className="text-sm text-slate-600">Nháº­p má»™t cÃ¢u ngáº¯n, há»‡ thá»‘ng sáº½ tÃ¡ch tá»« vÃ  phÃ¡t láº§n lÆ°á»£t video tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn.</p>
                   <div className="mt-5 flex flex-col gap-3 lg:flex-row">
                     <input
                       value={textToSignInput}
@@ -771,7 +794,7 @@ export default function App() {
                         if (event.key === 'Enter') void buildTextToSign();
                       }}
                       className="min-w-0 flex-1 rounded-2xl border border-blue-100 bg-blue-50/50 px-5 py-4 text-base font-semibold outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                      placeholder="Vi du: bạn đi học"
+                      placeholder="Vi du: báº¡n Ä‘i há»c"
                     />
                     <button
                       type="button"
@@ -779,7 +802,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-400/20 transition hover:scale-[1.01]"
                     >
                       {isTextToSignLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                      Tạo video
+                      Táº¡o video
                     </button>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -805,7 +828,7 @@ export default function App() {
                     <div>
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-500">Đang phát từ {currentSignIndex + 1}/{playableTextToSignWords.length}.</p>
+                          <p className="text-sm font-semibold text-slate-500">Äang phÃ¡t tá»« {currentSignIndex + 1}/{playableTextToSignWords.length}.</p>
                           <h3 className="text-2xl font-bold">{currentSignWord.item.word}</h3>
                         </div>
                         <button
@@ -813,7 +836,7 @@ export default function App() {
                           onClick={playNextSign}
                           className="rounded-2xl border border-blue-100 bg-white px-3 py-2 text-sm font-bold text-blue-700 shadow-sm"
                         >
-                          Từ tiếp
+                          Tá»« tiáº¿p
                         </button>
                       </div>
                       {currentSignWord.item.embedUrl ? (
@@ -841,7 +864,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="flex min-h-[26rem] items-center justify-center rounded-2xl bg-white/75 px-6 text-center text-base font-medium text-slate-500">
-                      Chưa có chuỗi video. Hãy nhập câu và bấm “Tạo video”.
+                      ChÆ°a cÃ³ chuá»—i video. HÃ£y nháº­p cÃ¢u vÃ  báº¥m â€œTáº¡o videoâ€.
                     </div>
                   )}
                 </div>
@@ -862,27 +885,27 @@ export default function App() {
                           <span className="flex items-center justify-between gap-3">
                             <span className="font-bold">{word.index}. {word.token}</span>
                             <span className={`text-xs font-bold ${word.matched ? 'text-emerald-700' : 'text-red-700'}`}>
-                              {word.matched ? (word.matchType === 'fuzzy' ? 'Gần đúng' : 'Có video') : 'Chưa có'}
+                              {word.matched ? (word.matchType === 'fuzzy' ? 'Gáº§n Ä‘Ãºng' : 'CÃ³ video') : 'ChÆ°a cÃ³'}
                             </span>
                           </span>
                           <span className="mt-1 block text-sm text-slate-600">
-                            {word.item?.word || (word.suggestions.length ? `Gợi ý: ${word.suggestions.map((item) => item.word).join(', ')}` : 'Không tìm thấy trong từ điển.')}
+                            {word.item?.word || (word.suggestions.length ? `Gá»£i Ã½: ${word.suggestions.map((item) => item.word).join(', ')}` : 'KhÃ´ng tÃ¬m tháº¥y trong tá»« Ä‘iá»ƒn.')}
                           </span>
                           {word.matchType === 'fuzzy' && (
                             <span className="mt-1 block text-xs font-bold text-amber-700">
-                              Độ giống nhau: {Math.round((word.score ?? word.item?.matchScore ?? 0) * 100)}%
+                              Äá»™ giá»‘ng nhau: {Math.round((word.score ?? word.item?.matchScore ?? 0) * 100)}%
                             </span>
                           )}
                           {word.item?.sourceName && (
                             <span className="mt-1 block text-xs font-bold text-slate-500">
-                              {word.item.sourceName}{word.item.region ? ` · ${word.item.region}` : ''}
+                              {word.item.sourceName}{word.item.region ? ` Â· ${word.item.region}` : ''}
                             </span>
                           )}
                         </button>
                       );
                     })
                   ) : (
-                    <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">Chưa có danh sách từ để phát.</p>
+                    <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">ChÆ°a cÃ³ danh sÃ¡ch tá»« Ä‘á»ƒ phÃ¡t.</p>
                   )}
                 </div>
               </div>
@@ -893,10 +916,10 @@ export default function App() {
                 <div className="flex-1">
                   <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-black text-violet-700">
                     <BookOpen className="h-3.5 w-3.5" />
-                    Từ điển
+                    Tá»« Ä‘iá»ƒn
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900">Từ điển tra cứu.</h2>
-                  <p className="text-sm text-slate-600">Tra theo từ khóa, ưu tiên QIPEDC và bỏ qua các từ trùng từ nguồn mở rộng.</p>
+                  <h2 className="text-2xl font-black text-slate-900">Tá»« Ä‘iá»ƒn tra cá»©u.</h2>
+                  <p className="text-sm text-slate-600">Tra theo tá»« khÃ³a, Æ°u tiÃªn QIPEDC vÃ  bá» qua cÃ¡c tá»« trÃ¹ng tá»« nguá»“n má»Ÿ rá»™ng.</p>
                   <div className="mt-5 flex flex-col gap-3 lg:flex-row">
                     <input
                       value={dictionaryQuery}
@@ -905,7 +928,7 @@ export default function App() {
                         if (event.key === 'Enter') void searchDictionary();
                       }}
                       className="min-w-0 flex-1 rounded-2xl border border-violet-100 bg-violet-50/50 px-5 py-4 text-base font-semibold outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                      placeholder="Nhập từ cần tìm, ví dụ: học, toán, gia đình..."
+                      placeholder="Nháº­p tá»« cáº§n tÃ¬m, vÃ­ dá»¥: há»c, toÃ¡n, gia Ä‘Ã¬nh..."
                     />
                     <button
                       type="button"
@@ -913,7 +936,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-violet-400/20 transition hover:scale-[1.01]"
                     >
                       {isDictionaryLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                      Tìm
+                      TÃ¬m
                     </button>
                   </div>
                 </div>
@@ -923,7 +946,7 @@ export default function App() {
                   onChange={(event) => setDictionaryTopic(event.target.value)}
                   className="rounded-2xl border border-violet-100 bg-white px-5 py-4 text-sm font-bold text-slate-700 shadow-sm"
                 >
-                  <option value="">Tất cả chủ đề</option>
+                  <option value="">Táº¥t cáº£ chá»§ Ä‘á»</option>
                   {dictionaryTopics.map((topic) => (
                     <option key={topic} value={topic}>
                       {topic}
@@ -969,14 +992,14 @@ export default function App() {
                         )}
                         <span className="min-w-0">
                           <span className="block text-lg font-black text-slate-900">{item.word}</span>
-                          <span className="mt-1 block text-xs font-semibold text-violet-700">{item.topic || item.lexicalType || 'Khác'}</span>
-                          <span className="mt-1 block text-xs font-bold text-slate-500">{item.sourceName || 'QIPEDC'}{item.region ? ` · ${item.region}` : ''}</span>
-                          <span className="mt-1 line-clamp-2 block text-xs text-slate-600">{item.description || 'Chưa có giải nghĩa.'}</span>
+                          <span className="mt-1 block text-xs font-semibold text-violet-700">{item.topic || item.lexicalType || 'KhÃ¡c'}</span>
+                          <span className="mt-1 block text-xs font-bold text-slate-500">{item.sourceName || 'QIPEDC'}{item.region ? ` Â· ${item.region}` : ''}</span>
+                          <span className="mt-1 line-clamp-2 block text-xs text-slate-600">{item.description || 'ChÆ°a cÃ³ giáº£i nghÄ©a.'}</span>
                         </span>
                       </button>
                     ))
                   ) : (
-                    <p className="rounded-2xl bg-violet-50 px-4 py-4 text-sm text-slate-600">Chưa có kết quả từ điển.</p>
+                    <p className="rounded-2xl bg-violet-50 px-4 py-4 text-sm text-slate-600">ChÆ°a cÃ³ káº¿t quáº£ tá»« Ä‘iá»ƒn.</p>
                   )}
                 </div>
 
@@ -986,14 +1009,14 @@ export default function App() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="text-4xl font-black text-slate-950">{selectedDictionaryItem.word}</h3>
-                          <p className="mt-1 text-sm font-semibold text-violet-700">{selectedDictionaryItem.topic || selectedDictionaryItem.lexicalType || 'Khác'}</p>
+                          <p className="mt-1 text-sm font-semibold text-violet-700">{selectedDictionaryItem.topic || selectedDictionaryItem.lexicalType || 'KhÃ¡c'}</p>
                         </div>
                         <a href={selectedDictionaryItem.sourceUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-violet-100 bg-white px-3 py-2 text-xs font-bold text-violet-700 shadow-sm">
                           {selectedDictionaryItem.sourceName || 'QIPEDC'}
                         </a>
                       </div>
                       <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">
-                        {selectedDictionaryItem.description || 'Mục từ này chưa có phần giải nghĩa.'}
+                        {selectedDictionaryItem.description || 'Má»¥c tá»« nÃ y chÆ°a cÃ³ pháº§n giáº£i nghÄ©a.'}
                       </p>
                       {selectedDictionaryItem.embedUrl ? (
                         <iframe
@@ -1015,7 +1038,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="flex min-h-[30rem] items-center justify-center px-6 text-center text-base font-medium text-slate-500">
-                      Chọn một mục từ để xem video ký hiệu.
+                      Chá»n má»™t má»¥c tá»« Ä‘á»ƒ xem video kÃ½ hiá»‡u.
                     </div>
                   )}
                 </div>
@@ -1026,11 +1049,11 @@ export default function App() {
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-xl shadow-emerald-900/5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-wider text-emerald-600">{result?.mode === 'sentence' ? 'Câu nhận diện' : 'Kết quả tốt nhất'}</p>
+                  <p className="text-sm font-bold uppercase tracking-wider text-emerald-600">{result?.mode === 'sentence' ? 'CÃ¢u nháº­n diá»‡n' : 'Káº¿t quáº£ tá»‘t nháº¥t'}</p>
                   <h2 className="mt-2 text-4xl font-black text-slate-900">{result?.mode === 'sentence' ? sentenceText || '--' : bestPrediction?.label ?? '--'}</h2>
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right">
-                  <p className="text-xs font-bold text-emerald-700">{result?.mode === 'sentence' ? 'Số từ' : 'Độ tin cậy'}</p>
+                  <p className="text-xs font-bold text-emerald-700">{result?.mode === 'sentence' ? 'Sá»‘ tá»«' : 'Äá»™ tin cáº­y'}</p>
                   <p className="text-2xl font-bold text-slate-900">{confidenceText}</p>
                 </div>
               </div>
@@ -1046,7 +1069,7 @@ export default function App() {
             <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl shadow-blue-900/5">
               <div className="mb-4 flex items-center gap-2">
                 <Video className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-black">{result?.mode === 'sentence' ? 'Các từ đã tách' : 'Top dự đoán'}</h3>
+                <h3 className="text-lg font-black">{result?.mode === 'sentence' ? 'CÃ¡c tá»« Ä‘Ã£ tÃ¡ch' : 'Top dá»± Ä‘oÃ¡n'}</h3>
               </div>
 
               <div className="space-y-3">
@@ -1060,7 +1083,7 @@ export default function App() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <span className="font-bold">{word.index}. {word.label}</span>
-                        <span className="text-sm font-semibold text-slate-600">{Math.round(word.confidence * 100)}% · {word.frames} frame</span>
+                        <span className="text-sm font-semibold text-slate-600">{Math.round(word.confidence * 100)}% Â· {word.frames} frame</span>
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">
                         Frame {word.startFrame ?? '--'} - {word.endFrame ?? '--'}
@@ -1089,16 +1112,12 @@ export default function App() {
                   ))
                 ) : (
                   <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">
-                    Chưa có kết quả. Hãy quay một clip hoặc upload video để nhận diện.
+                    ChÆ°a cÃ³ káº¿t quáº£. HÃ£y quay má»™t clip hoáº·c upload video Ä‘á»ƒ nháº­n diá»‡n.
                   </p>
                 )}
               </div>
             </div>
 
-            <div className="rounded-3xl border border-slate-100 bg-white p-6 text-sm text-slate-600 shadow-xl shadow-slate-900/5">
-              <p className="font-bold text-slate-900">Lưu ý local.</p>
-              <p className="mt-2">Web tự khởi động Python API khi chạy <span className="font-semibold">npm run dev</span> hoặc <span className="font-semibold">run_web_local_vsl.bat</span>. Nếu vừa mở web, hãy đợi vài giây để trạng thái tự cập nhật.</p>
-            </div>
           </aside>
         </main>
       </div>

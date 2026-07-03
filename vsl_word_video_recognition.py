@@ -13,7 +13,6 @@ import argparse
 import json
 import time
 from pathlib import Path
-from tkinter import Tk, filedialog
 
 import cv2
 import mediapipe as mp
@@ -605,6 +604,14 @@ def print_predictions(title: str, predictions: list[tuple[str, float]], valid_fr
 
 
 def choose_video_file() -> Path | None:
+    try:
+        from tkinter import Tk, filedialog
+    except ImportError as exc:
+        raise RuntimeError(
+            "File picker is not available in this Python environment. "
+            "Use --video path/to/video.mp4 instead."
+        ) from exc
+
     root = Tk()
     root.withdraw()
     root.attributes("-topmost", True)
