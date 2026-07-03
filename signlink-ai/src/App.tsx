@@ -1,7 +1,6 @@
 ﻿import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   Activity,
-  AlertCircle,
   BookOpen,
   Camera,
   CheckCircle2,
@@ -12,10 +11,8 @@ import {
   Search,
   Sparkles,
   Square,
-  Target,
   Type,
   Upload,
-  Users,
   Video,
   XCircle,
 } from 'lucide-react';
@@ -137,7 +134,7 @@ export default function App() {
   const [isTextToSignLoading, setIsTextToSignLoading] = useState(false);
   const [currentSignIndex, setCurrentSignIndex] = useState(0);
   const [handTrackText, setHandTrackText] = useState('Handtrack chua bat.');
-  const [isHeaderHidden, setIsHeaderHidden] = useState(false);
+  const [headerVisibility, setHeaderVisibility] = useState(1);
 
   const videoRef = useRef<HTMLVideoElement>(null);
   const handCanvasRef = useRef<HTMLCanvasElement>(null);
@@ -184,11 +181,12 @@ export default function App() {
       const scrollDelta = currentScrollY - lastScrollYRef.current;
 
       if (currentScrollY < 24) {
-        setIsHeaderHidden(false);
-      } else if (scrollDelta > 8) {
-        setIsHeaderHidden(true);
-      } else if (scrollDelta < -8) {
-        setIsHeaderHidden(false);
+        setHeaderVisibility(1);
+      } else if (Math.abs(scrollDelta) > 1) {
+        setHeaderVisibility((visibility) => {
+          const nextVisibility = visibility - scrollDelta / 180;
+          return Math.min(1, Math.max(0, nextVisibility));
+        });
       }
 
       lastScrollYRef.current = currentScrollY;
@@ -545,7 +543,14 @@ export default function App() {
     <div className="min-h-screen bg-white text-slate-900">
       <div className="pointer-events-none fixed inset-0 -z-10 bg-[radial-gradient(circle_at_top_left,rgba(59,130,246,0.16),transparent_34%),radial-gradient(circle_at_top_right,rgba(124,58,237,0.14),transparent_32%),linear-gradient(180deg,#ffffff_0%,#eff6ff_48%,#ffffff_100%)]" />
       <div className="mx-auto flex min-h-screen max-w-7xl flex-col px-5 py-5">
-        <header className={`sticky top-4 z-40 flex flex-col gap-4 rounded-3xl border border-white/70 bg-white/85 px-5 py-4 shadow-xl shadow-blue-900/5 backdrop-blur-xl transition-all duration-500 ease-out lg:flex-row lg:items-center lg:justify-between ${isHeaderHidden ? 'pointer-events-none -translate-y-28 opacity-0' : 'translate-y-0 opacity-100'}`}>
+        <header
+          className="sticky top-4 z-40 flex flex-col gap-4 rounded-3xl border border-white/70 bg-white/85 px-5 py-4 shadow-xl shadow-blue-900/5 backdrop-blur-xl transition-transform duration-150 ease-out lg:flex-row lg:items-center lg:justify-between"
+          style={{
+            opacity: headerVisibility,
+            transform: `translateY(${(1 - headerVisibility) * -112}px)`,
+            pointerEvents: headerVisibility < 0.2 ? 'none' : 'auto',
+          }}
+        >
           <div className="flex items-center gap-3">
             <div className="flex h-14 w-14 items-center justify-center overflow-hidden rounded-2xl bg-white shadow-lg shadow-blue-900/10 ring-1 ring-blue-100">
               <img
@@ -645,52 +650,6 @@ export default function App() {
           </div>
         </section>
 
-        <section id="thuc-trang" className="scroll-mt-28 py-8">
-          <div className="mb-8 text-center">
-            <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-rose-200 bg-rose-50 px-4 py-2 text-sm font-black text-rose-700">
-              <AlertCircle className="h-4 w-4" />
-              Thá»±c tráº¡ng vÃ  má»¥c tiÃªu
-            </div>
-            <h2 className="mx-auto max-w-4xl text-3xl font-black leading-tight text-slate-950 md:text-4xl">
-              Há»— trá»£ ngÃ´n ngá»¯ cho ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh.
-            </h2>
-            <p className="mx-auto mt-4 max-w-3xl text-base leading-relaxed text-slate-600">
-              NgÃ´n ngá»¯ kÃ½ hiá»‡u lÃ  cáº§u ná»‘i quan trá»ng Ä‘á»ƒ ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh há»c táº­p, giao tiáº¿p vÃ  tham gia Ä‘á»i sá»‘ng xÃ£ há»™i. Tuy nhiÃªn, khÃ´ng pháº£i ai cÅ©ng cÃ³ Ä‘iá»u kiá»‡n tiáº¿p cáº­n ngÆ°á»i phiÃªn dá»‹ch, tÃ i liá»‡u há»c phÃ¹ há»£p hoáº·c cÃ´ng cá»¥ há»— trá»£ giao tiáº¿p tá»©c thá»i.
-            </p>
-          </div>
-
-          <div className="grid gap-5 md:grid-cols-3">
-            <div className="rounded-3xl border border-rose-100 bg-gradient-to-br from-rose-50 to-orange-50 p-6 shadow-lg shadow-rose-900/5">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-rose-400 to-orange-500 text-white shadow-lg shadow-rose-400/20">
-                <AlertCircle className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-950">Khoáº£ng cÃ¡ch giao tiáº¿p.</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                NgÆ°á»i nghe thÆ°á»ng chÆ°a biáº¿t ngÃ´n ngá»¯ kÃ½ hiá»‡u, trong khi ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh cáº§n má»™t phÆ°Æ¡ng thá»©c biá»ƒu Ä‘áº¡t tá»± nhiÃªn, nhanh vÃ  dá»… hiá»ƒu trong há»c táº­p, dá»‹ch vá»¥ cÃ´ng, y táº¿ vÃ  sinh hoáº¡t háº±ng ngÃ y.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-blue-100 bg-gradient-to-br from-blue-50 to-cyan-50 p-6 shadow-lg shadow-blue-900/5">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-blue-500 to-cyan-500 text-white shadow-lg shadow-blue-400/20">
-                <Users className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-950">Tiáº¿p cáº­n ngÃ´n ngá»¯ sá»›m.</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                Viá»‡c há»c vÃ  tra cá»©u kÃ½ hiá»‡u cáº§n trá»±c quan, cÃ³ video minh há»a vÃ  dá»… dÃ¹ng trÃªn thiáº¿t bá»‹ cÃ¡ nhÃ¢n. Há»‡ thá»‘ng hÆ°á»›ng Ä‘áº¿n viá»‡c giÃºp ngÆ°á»i há»c, gia Ä‘Ã¬nh vÃ  giÃ¡o viÃªn cÃ³ thÃªm cÃ´ng cá»¥ há»— trá»£ táº¡i chá»—.
-              </p>
-            </div>
-
-            <div className="rounded-3xl border border-violet-100 bg-gradient-to-br from-violet-50 to-indigo-50 p-6 shadow-lg shadow-violet-900/5">
-              <div className="mb-4 flex h-12 w-12 items-center justify-center rounded-2xl bg-gradient-to-br from-violet-500 to-indigo-500 text-white shadow-lg shadow-violet-400/20">
-                <Target className="h-6 w-6" />
-              </div>
-              <h3 className="text-lg font-black text-slate-950">Má»¥c tiÃªu cá»§a SignLink.</h3>
-              <p className="mt-3 text-sm leading-relaxed text-slate-600">
-                SignLink hÆ°á»›ng Ä‘áº¿n há»— trá»£ nháº­n diá»‡n kÃ½ hiá»‡u, ghÃ©p cÃ¢u, tra cá»©u tá»« Ä‘iá»ƒn vÃ  chuyá»ƒn vÄƒn báº£n thÃ nh chuá»—i video kÃ½ hiá»‡u, giÃºp giáº£m rÃ o cáº£n giao tiáº¿p giá»¯a ngÆ°á»i Ä‘iáº¿c, khiáº¿m thÃ­nh vÃ  cá»™ng Ä‘á»“ng ngÆ°á»i nghe.
-              </p>
-            </div>
-          </div>
-        </section>
 
         <main id="nhan-dien" className="grid flex-1 scroll-mt-28 gap-8 py-8 lg:grid-cols-[1.35fr_0.8fr]">
           <section className="flex flex-col gap-6">
