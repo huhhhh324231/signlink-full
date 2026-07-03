@@ -292,6 +292,9 @@ def extract_feature_timeline_from_video(
             vector = extract_landmark_features(results)
             features.append(vector)
 
+            if max_frames and max_frames > 0 and len(features) >= max_frames:
+                break
+
             if show_preview:
                 draw_hands(frame, results)
                 cv2.putText(

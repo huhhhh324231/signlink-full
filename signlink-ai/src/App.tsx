@@ -146,6 +146,7 @@ export default function App() {
   const chunksRef = useRef<BlobPart[]>([]);
   const handLandmarkerRef = useRef<HandLandmarker | null>(null);
   const handTrackFrameRef = useRef<number | null>(null);
+  const recordingTimeoutRef = useRef<number | null>(null);
   const lastVideoTimeRef = useRef(-1);
   const lastScrollYRef = useRef(0);
   const dictionaryResultCacheRef = useRef(new Map<string, DictionaryResponse>());
@@ -168,6 +169,9 @@ export default function App() {
     }, 10000);
     return () => {
       window.clearInterval(timer);
+      if (recordingTimeoutRef.current !== null) {
+        window.clearTimeout(recordingTimeoutRef.current);
+      }
       stopCamera();
       handLandmarkerRef.current?.close();
       if (recordedUrl) URL.revokeObjectURL(recordedUrl);
@@ -339,6 +343,10 @@ export default function App() {
     };
 
     recorder.onstop = () => {
+      if (recordingTimeoutRef.current !== null) {
+        window.clearTimeout(recordingTimeoutRef.current);
+        recordingTimeoutRef.current = null;
+      }
       const blob = new Blob(chunksRef.current, { type: mimeType });
       if (recordedUrl) URL.revokeObjectURL(recordedUrl);
       setRecordedUrl(URL.createObjectURL(blob));
@@ -347,13 +355,26 @@ export default function App() {
     };
 
     recorder.start();
+    if (recordingTimeoutRef.current !== null) {
+      window.clearTimeout(recordingTimeoutRef.current);
+    }
+    recordingTimeoutRef.current = window.setTimeout(() => {
+      if (recorderRef.current && recorderRef.current.state !== 'inactive') {
+        setStatus('Đã đủ thời lượng demo, đang gửi video sang model...');
+        recorderRef.current.stop();
+      }
+    }, 3000);
     setIsRecording(true);
-    setStatus('Đang quay. Hãy thực hiện trọn vẹn ký hiệu, rồi bấm “Dừng quay”.');
+    setStatus('Đang quay. Hãy thực hiện trọn vẹn ký hiệu trong khoảng 3 giây.');
   }
 
   function stopRecording() {
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === 'inactive') return;
+    if (recordingTimeoutRef.current !== null) {
+      window.clearTimeout(recordingTimeoutRef.current);
+      recordingTimeoutRef.current = null;
+    }
     setStatus('Đang dừng quay và gửi video sang model...');
     recorder.stop();
   }
