@@ -245,7 +245,14 @@ def predict_features(model, labels: list[str], features: list[np.ndarray], devic
     return [(labels[int(idx)], float(value)) for value, idx in zip(values.cpu(), indices.cpu())]
 
 
-def extract_feature_timeline_from_video(video_path: Path, mirror: bool = False, show_preview: bool = True) -> list[np.ndarray]:
+def extract_feature_timeline_from_video(
+    video_path: Path,
+    mirror: bool = False,
+    show_preview: bool = True,
+    max_frames: int | None = None,
+    max_frame_width: int | None = None,
+    model_complexity: int = 1,
+) -> list[np.ndarray]:
     if not video_path.exists():
         raise FileNotFoundError(f"Video not found: {video_path}")
 
@@ -254,9 +261,14 @@ def extract_feature_timeline_from_video(video_path: Path, mirror: bool = False, 
         raise RuntimeError(f"Cannot open video: {video_path}")
 
     features: list[np.ndarray] = []
+    total_frames = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
+    frame_stride = 1
+    if max_frames and max_frames > 0 and total_frames > max_frames:
+        frame_stride = max(1, int(np.ceil(total_frames / max_frames)))
+
     holistic = mp_holistic.Holistic(
         static_image_mode=False,
-        model_complexity=1,
+        model_complexity=model_complexity,
     )
 
     try:
@@ -267,8 +279,13 @@ def extract_feature_timeline_from_video(video_path: Path, mirror: bool = False, 
                 break
 
             frame_index += 1
+            if frame_stride > 1 and (frame_index - 1) % frame_stride != 0:
+                continue
             if mirror:
                 frame = cv2.flip(frame, 1)
+            if max_frame_width and max_frame_width > 0 and frame.shape[1] > max_frame_width:
+                scale = max_frame_width / frame.shape[1]
+                frame = cv2.resize(frame, (max_frame_width, max(1, int(frame.shape[0] * scale))))
 
             rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
             results = holistic.process(rgb)

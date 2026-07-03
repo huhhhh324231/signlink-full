@@ -10,3 +10,21 @@ services:
         value: 3.10.13
       - key: CORS_ALLOW_ORIGIN
         value: "*"
+      - key: OMP_NUM_THREADS
+        value: "1"
+      - key: MKL_NUM_THREADS
+        value: "1"
+      - key: OPENBLAS_NUM_THREADS
+        value: "1"
+      - key: NUMEXPR_NUM_THREADS
+        value: "1"
+      - key: TORCH_NUM_THREADS
+        value: "1"
+      - key: TORCH_NUM_INTEROP_THREADS
+        value: "1"
+      - key: PREDICT_MAX_VIDEO_FRAMES
+        value: "96"
+      - key: PREDICT_MAX_FRAME_WIDTH
+        value: "640"
+      - key: PREDICT_MEDIAPIPE_COMPLEXITY
+        value: "0"

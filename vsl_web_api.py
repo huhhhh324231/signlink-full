@@ -20,6 +20,7 @@ import json
 import os
 import re
 import tempfile
+import time
 import unicodedata
 import urllib.parse
 import urllib.request
@@ -36,6 +37,9 @@ LABELS_PATH = BASE_DIR / "vsl_word_labels.json"
 HOST = os.environ.get("HOST", "0.0.0.0")
 PORT = int(os.environ.get("PORT", "8008"))
 CORS_ALLOW_ORIGIN = os.environ.get("CORS_ALLOW_ORIGIN", "*")
+PREDICT_MAX_VIDEO_FRAMES = int(os.environ.get("PREDICT_MAX_VIDEO_FRAMES", "96"))
+PREDICT_MAX_FRAME_WIDTH = int(os.environ.get("PREDICT_MAX_FRAME_WIDTH", "640"))
+PREDICT_MEDIAPIPE_COMPLEXITY = int(os.environ.get("PREDICT_MEDIAPIPE_COMPLEXITY", "0"))
 QIPEDC_BASE_URL = "https://qipedc.moet.gov.vn"
 TDNNKH_BASE_URL = "https://www.tudienngonngukyhieu.com"
 
@@ -49,19 +53,34 @@ _segmented_text_cache: dict[str, list[dict[str, Any]]] = {}
 NETWORK_TIMEOUT_SECONDS = 8
 
 
+def log_event(message: str) -> None:
+    print(f"[SignLink API] {message}", flush=True)
+
+
 def get_runtime():
     global _labels, _model, _device
+    started = time.perf_counter()
+    log_event("runtime: importing torch/model helpers")
     import torch
 
     from vsl_transformer_model import load_vsl_transformer
     from vsl_word_video_recognition import load_labels
 
+    try:
+        torch.set_num_threads(max(1, int(os.environ.get("TORCH_NUM_THREADS", "1"))))
+        torch.set_num_interop_threads(max(1, int(os.environ.get("TORCH_NUM_INTEROP_THREADS", "1"))))
+    except RuntimeError:
+        pass
+
     if _labels is None:
+        log_event("runtime: loading labels")
         _labels = load_labels()
     if _device is None:
         _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
     if _model is None:
+        log_event(f"runtime: loading transformer model on {_device}")
         _model = load_vsl_transformer(STATE_PATH, num_classes=len(_labels), device=_device)
+    log_event(f"runtime: ready in {time.perf_counter() - started:.2f}s")
     return _model, _labels, _device
 
 
@@ -157,10 +176,15 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
         self.wfile.write(payload)
 
     def handle_predict_video(self) -> tuple[int, bytes]:
+        request_started = time.perf_counter()
         content_type = self.headers.get("Content-Type", "")
         if "multipart/form-data" not in content_type:
             return json_bytes({"ok": False, "error": "Expected multipart/form-data"}, status=400)
 
+        log_event(
+            "predict: request started "
+            f"content_length={self.headers.get('Content-Length', 'unknown')}"
+        )
         form = cgi.FieldStorage(
             fp=self.rfile,
             headers=self.headers,
@@ -177,16 +201,20 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
         filename = Path(getattr(item, "filename", "") or "uploaded.webm").name
         suffix = Path(filename).suffix or ".webm"
 
+        saved_bytes = 0
         with tempfile.NamedTemporaryFile(delete=False, suffix=suffix) as temp_file:
             temp_path = Path(temp_file.name)
             while True:
                 chunk = item.file.read(1024 * 1024)
                 if not chunk:
                     break
+                saved_bytes += len(chunk)
                 temp_file.write(chunk)
 
         try:
+            log_event(f"predict: saved upload filename={filename} bytes={saved_bytes}")
             model, labels, device = get_runtime()
+            log_event("predict: importing video recognition pipeline")
             from vsl_word_video_recognition import (
                 extract_feature_timeline_from_video,
                 predict_features,
@@ -198,7 +226,20 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
                 mode_item = form["mode"]
                 mode = str(getattr(mode_item, "value", "sentence") or "sentence")
 
-            timeline = extract_feature_timeline_from_video(temp_path, mirror=False, show_preview=False)
+            log_event(
+                "predict: extracting timeline "
+                f"mode={mode} max_frames={PREDICT_MAX_VIDEO_FRAMES} "
+                f"max_width={PREDICT_MAX_FRAME_WIDTH} complexity={PREDICT_MEDIAPIPE_COMPLEXITY}"
+            )
+            timeline = extract_feature_timeline_from_video(
+                temp_path,
+                mirror=False,
+                show_preview=False,
+                max_frames=PREDICT_MAX_VIDEO_FRAMES,
+                max_frame_width=PREDICT_MAX_FRAME_WIDTH,
+                model_complexity=PREDICT_MEDIAPIPE_COMPLEXITY,
+            )
+            log_event(f"predict: extracted frames={len(timeline)}")
             if not timeline:
                 return json_bytes(
                     {
@@ -217,6 +258,7 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
             }
 
             if mode == "sentence":
+                log_event("predict: running sentence prediction")
                 sentence, words = predict_sentence_features(model, labels, timeline, device)
                 if not words:
                     return json_bytes(
@@ -241,8 +283,9 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
                     }
                 )
 
+            log_event("predict: running word prediction")
             predictions = predict_features(model, labels, timeline, device)
-            return json_bytes(
+            status_payload = json_bytes(
                 {
                     "ok": True,
                     "mode": "word",
@@ -255,6 +298,8 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
                     ],
                 }
             )
+            log_event(f"predict: completed in {time.perf_counter() - request_started:.2f}s")
+            return status_payload
         finally:
             try:
                 temp_path.unlink(missing_ok=True)
