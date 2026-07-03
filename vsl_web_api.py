@@ -100,7 +100,7 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
             )
             return
 
-        if parsed_path == "/api/vsl/health":
+        if parsed_path == "/api/vsl/health" or parsed_path.endswith("/api/vsl/health") or "/api/vsl/health" in self.path:
             model_ready = STATE_PATH.exists() and LABELS_PATH.exists()
             self.send_json(
                 {
@@ -109,11 +109,12 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
                     "model": STATE_PATH.name,
                     "labels": LABELS_PATH.name,
                     "device": "lazy",
+                    "path": parsed_path,
                 }
             )
             return
 
-        if self.path.startswith("/api/dictionary/search"):
+        if parsed_path == "/api/dictionary/search":
             try:
                 status, payload = self.handle_dictionary_search()
             except Exception as exc:
@@ -125,7 +126,7 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
             return
 
-        if self.path.startswith("/api/text-to-sign"):
+        if parsed_path == "/api/text-to-sign":
             try:
                 status, payload = self.handle_text_to_sign()
             except Exception as exc:
@@ -137,7 +138,7 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
             self.wfile.write(payload)
             return
 
-        self.send_json({"ok": False, "error": "Not found"}, status=404)
+        self.send_json({"ok": False, "error": "Not found", "path": parsed_path}, status=404)
 
     def do_POST(self) -> None:
         if self.path != "/api/vsl/predict-video":
