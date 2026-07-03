@@ -23,8 +23,8 @@ services:
       - key: TORCH_NUM_INTEROP_THREADS
         value: "1"
       - key: PREDICT_MAX_VIDEO_FRAMES
-        value: "96"
+        value: "48"
       - key: PREDICT_MAX_FRAME_WIDTH
-        value: "640"
+        value: "480"
       - key: PREDICT_MEDIAPIPE_COMPLEXITY
         value: "0"

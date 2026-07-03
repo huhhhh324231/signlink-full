@@ -20,6 +20,7 @@ import json
 import os
 import re
 import tempfile
+import threading
 import time
 import unicodedata
 import urllib.parse
@@ -50,6 +51,8 @@ _dictionary_cache: dict[str, Any] = {}
 _merged_dictionary_cache: dict[str, list[dict[str, Any]]] = {}
 _text_to_sign_cache: dict[str, list[dict[str, Any]]] = {}
 _segmented_text_cache: dict[str, list[dict[str, Any]]] = {}
+_runtime_lock = threading.Lock()
+_predict_lock = threading.Lock()
 NETWORK_TIMEOUT_SECONDS = 8
 
 
@@ -60,28 +63,32 @@ def log_event(message: str) -> None:
 def get_runtime():
     global _labels, _model, _device
     started = time.perf_counter()
-    log_event("runtime: importing torch/model helpers")
-    import torch
+    with _runtime_lock:
+        if _labels is not None and _model is not None and _device is not None:
+            return _model, _labels, _device
 
-    from vsl_transformer_model import load_vsl_transformer
-    from vsl_word_video_recognition import load_labels
+        log_event("runtime: importing torch/model helpers")
+        import torch
 
-    try:
-        torch.set_num_threads(max(1, int(os.environ.get("TORCH_NUM_THREADS", "1"))))
-        torch.set_num_interop_threads(max(1, int(os.environ.get("TORCH_NUM_INTEROP_THREADS", "1"))))
-    except RuntimeError:
-        pass
+        from vsl_transformer_model import load_vsl_transformer
+        from vsl_word_video_recognition import load_labels
 
-    if _labels is None:
-        log_event("runtime: loading labels")
-        _labels = load_labels()
-    if _device is None:
-        _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
-    if _model is None:
-        log_event(f"runtime: loading transformer model on {_device}")
-        _model = load_vsl_transformer(STATE_PATH, num_classes=len(_labels), device=_device)
-    log_event(f"runtime: ready in {time.perf_counter() - started:.2f}s")
-    return _model, _labels, _device
+        try:
+            torch.set_num_threads(max(1, int(os.environ.get("TORCH_NUM_THREADS", "1"))))
+            torch.set_num_interop_threads(max(1, int(os.environ.get("TORCH_NUM_INTEROP_THREADS", "1"))))
+        except RuntimeError:
+            pass
+
+        if _labels is None:
+            log_event("runtime: loading labels")
+            _labels = load_labels()
+        if _device is None:
+            _device = torch.device("cuda" if torch.cuda.is_available() else "cpu")
+        if _model is None:
+            log_event(f"runtime: loading transformer model on {_device}")
+            _model = load_vsl_transformer(STATE_PATH, num_classes=len(_labels), device=_device)
+        log_event(f"runtime: ready in {time.perf_counter() - started:.2f}s")
+        return _model, _labels, _device
 
 
 def json_bytes(payload: dict[str, Any], status: int = 200) -> tuple[int, bytes]:
@@ -99,6 +106,10 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
 
     def do_OPTIONS(self) -> None:
         self.send_response(204)
+        self.end_headers()
+
+    def do_HEAD(self) -> None:
+        self.send_response(200)
         self.end_headers()
 
     def do_GET(self) -> None:
@@ -164,10 +175,22 @@ class VSLRequestHandler(BaseHTTPRequestHandler):
             self.send_json({"ok": False, "error": "Not found"}, status=404)
             return
 
+        if not _predict_lock.acquire(blocking=False):
+            self.send_json(
+                {
+                    "ok": False,
+                    "error": "Server dang xu ly mot video khac. Hay thu lai sau vai giay.",
+                },
+                status=429,
+            )
+            return
+
         try:
             status, payload = self.handle_predict_video()
         except Exception as exc:
             status, payload = json_bytes({"ok": False, "error": str(exc)}, status=500)
+        finally:
+            _predict_lock.release()
 
         self.send_response(status)
         self.send_header("Content-Type", "application/json; charset=utf-8")

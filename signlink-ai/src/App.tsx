@@ -104,19 +104,20 @@ const HAND_CONNECTIONS = [
 const ENV_API_BASE = import.meta.env.VITE_API_BASE?.trim();
 const API_BASES = [
   ...(ENV_API_BASE ? [ENV_API_BASE.replace(/\/$/, '')] : []),
+  'https://signlink-full.onrender.com',
   'http://127.0.0.1:8008',
   'http://localhost:8008',
 ];
-const TEXT_TO_SIGN_SUGGESTIONS = ['báº¡n Ä‘i há»c', 'tÃ´i yÃªu gia Ä‘Ã¬nh', 'xin chÃ o', 'cáº£m Æ¡n báº¡n'];
-const DICTIONARY_QUICK_SEARCHES = ['há»c', 'gia Ä‘Ã¬nh', 'báº¡n', 'cáº£m Æ¡n', 'xin chÃ o'];
+const TEXT_TO_SIGN_SUGGESTIONS = ['bạn đi học', 'tôi yêu gia đình', 'xin chào', 'cảm ơn bạn'];
+const DICTIONARY_QUICK_SEARCHES = ['học', 'gia đình', 'bạn', 'cảm ơn', 'xin chào'];
 
 export default function App() {
   const [isBackendReady, setIsBackendReady] = useState(false);
-  const [backendText, setBackendText] = useState('Äang kiá»ƒm tra backend local...');
+  const [backendText, setBackendText] = useState('Dang kiem tra API...');
   const [isCameraActive, setIsCameraActive] = useState(false);
   const [isRecording, setIsRecording] = useState(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [status, setStatus] = useState('Sáºµn sÃ ng nháº­n diá»‡n tá»« báº±ng video.');
+  const [status, setStatus] = useState('Sẵn sàng nhận diện từ bằng video.');
   const [recordedUrl, setRecordedUrl] = useState<string | null>(null);
   const [result, setResult] = useState<ApiResponse | null>(null);
   const [apiBase, setApiBase] = useState(API_BASES[0]);
@@ -125,12 +126,12 @@ export default function App() {
   const [dictionaryTopic, setDictionaryTopic] = useState('');
   const [dictionaryItems, setDictionaryItems] = useState<DictionaryItem[]>([]);
   const [dictionaryTopics, setDictionaryTopics] = useState<string[]>([]);
-  const [dictionaryStatus, setDictionaryStatus] = useState('Nháº­p tá»« khÃ³a Ä‘á»ƒ tra cá»©u tá»« Ä‘iá»ƒn.');
+  const [dictionaryStatus, setDictionaryStatus] = useState('Nhập từ khóa để tra cứu từ điển.');
   const [selectedDictionaryItem, setSelectedDictionaryItem] = useState<DictionaryItem | null>(null);
   const [isDictionaryLoading, setIsDictionaryLoading] = useState(false);
-  const [textToSignInput, setTextToSignInput] = useState('báº¡n Ä‘i há»c');
+  const [textToSignInput, setTextToSignInput] = useState('bạn đi học');
   const [textToSignWords, setTextToSignWords] = useState<TextToSignWord[]>([]);
-  const [textToSignStatus, setTextToSignStatus] = useState('Nháº­p cÃ¢u tiáº¿ng Viá»‡t Ä‘á»ƒ phÃ¡t chuá»—i video kÃ½ hiá»‡u.');
+  const [textToSignStatus, setTextToSignStatus] = useState('Nhập câu tiếng Việt để phát chuỗi video ký hiệu.');
   const [isTextToSignLoading, setIsTextToSignLoading] = useState(false);
   const [currentSignIndex, setCurrentSignIndex] = useState(0);
   const [handTrackText, setHandTrackText] = useState('Handtrack chua bat.');
@@ -152,7 +153,7 @@ export default function App() {
 
   const bestPrediction = result?.predictions?.[0] ?? null;
   const sentenceText = result?.sentence || result?.words?.map((word) => word.label).join(' ') || '';
-  const recordingLabel = isRecording ? 'Äang quay.' : isCameraActive ? 'Camera sáºµn sÃ ng.' : 'Camera táº¯t.';
+  const recordingLabel = isRecording ? 'Đang quay.' : isCameraActive ? 'Camera sẵn sàng.' : 'Camera tắt.';
 
   const confidenceText = useMemo(() => {
     if (result?.mode === 'sentence') return `${result.words?.length ?? 0} tu`;
@@ -203,7 +204,7 @@ export default function App() {
         const data = await response.json();
         setApiBase(base);
         setIsBackendReady(Boolean(data.ok));
-        setBackendText(data.ok ? `Backend local sáºµn sÃ ng (${data.device}).` : 'Backend chÆ°a sáºµn sÃ ng model.');
+        setBackendText(data.ok ? `API san sang (${data.device}).` : 'API chua san sang model.');
         return;
       } catch {
         // Try the next localhost variant.
@@ -212,13 +213,13 @@ export default function App() {
 
     setIsBackendReady(false);
     if (showFailure) {
-      setBackendText('Äang Ä‘á»£i Python API local khá»Ÿi Ä‘á»™ng...');
+      setBackendText('Chua ket noi duoc API.');
     }
   }
 
   async function startCamera() {
     setResult(null);
-    setStatus('Äang xin quyá»n camera...');
+    setStatus('Đang xin quyền camera...');
     try {
       const stream = await navigator.mediaDevices.getUserMedia({
         video: { width: { ideal: 1280 }, height: { ideal: 720 }, facingMode: 'user' },
@@ -233,9 +234,9 @@ export default function App() {
       }
       setIsCameraActive(true);
       void startHandTracking();
-      setStatus('Camera Ä‘Ã£ báº­t. Báº¥m â€œBáº¯t Ä‘áº§u quayâ€ Ä‘á»ƒ ghi má»™t tá»« hoáº·c má»™t cÃ¢u kÃ½ hiá»‡u.');
+      setStatus('Camera đã bật. Bấm “Bắt đầu quay” để ghi một từ hoặc một câu ký hiệu.');
     } catch (error) {
-      setStatus(error instanceof Error ? error.message : 'KhÃ´ng má»Ÿ Ä‘Æ°á»£c camera.');
+      setStatus(error instanceof Error ? error.message : 'Không mở được camera.');
     }
   }
 
@@ -256,7 +257,7 @@ export default function App() {
   async function getHandLandmarker() {
     if (handLandmarkerRef.current) return handLandmarkerRef.current;
 
-    setHandTrackText('Äang táº£i handtrack local...');
+    setHandTrackText('Dang tai handtrack...');
     const vision = await FilesetResolver.forVisionTasks('/wasm');
     const landmarker = await HandLandmarker.createFromOptions(vision, {
       baseOptions: {
@@ -289,7 +290,7 @@ export default function App() {
           lastVideoTimeRef.current = video.currentTime;
           const result = landmarker.detectForVideo(video, performance.now());
           drawHandTrack(canvas, result.landmarks ?? []);
-          setHandTrackText(result.landmarks?.length ? `Äang báº¯t ${result.landmarks.length} bÃ n tay.` : 'ChÆ°a tháº¥y bÃ n tay.');
+          setHandTrackText(result.landmarks?.length ? `Đang bắt ${result.landmarks.length} bàn tay.` : 'Chưa thấy bàn tay.');
         }
 
         handTrackFrameRef.current = window.requestAnimationFrame(track);
@@ -300,7 +301,7 @@ export default function App() {
       }
       handTrackFrameRef.current = window.requestAnimationFrame(track);
     } catch (error) {
-      setHandTrackText(error instanceof Error ? error.message : 'KhÃ´ng báº­t Ä‘Æ°á»£c handtrack.');
+      setHandTrackText(error instanceof Error ? error.message : 'Không bật được handtrack.');
     }
   }
 
@@ -321,7 +322,7 @@ export default function App() {
   function startRecording() {
     const stream = streamRef.current;
     if (!stream) {
-      setStatus('HÃ£y báº­t camera trÆ°á»›c khi quay.');
+      setStatus('Hãy bật camera trước khi quay.');
       return;
     }
 
@@ -347,19 +348,24 @@ export default function App() {
 
     recorder.start();
     setIsRecording(true);
-    setStatus('Äang quay. HÃ£y thá»±c hiá»‡n trá»n váº¹n kÃ½ hiá»‡u, rá»“i báº¥m â€œDá»«ng quayâ€.');
+    setStatus('Đang quay. Hãy thực hiện trọn vẹn ký hiệu, rồi bấm “Dừng quay”.');
   }
 
   function stopRecording() {
     const recorder = recorderRef.current;
     if (!recorder || recorder.state === 'inactive') return;
-    setStatus('Äang dá»«ng quay vÃ  gá»­i video sang model...');
+    setStatus('Đang dừng quay và gửi video sang model...');
     recorder.stop();
   }
 
   async function analyzeBlob(blob: Blob, filename: string) {
+    if (isAnalyzing) {
+      setStatus('Đang xử lý video trước đó, vui lòng đợi hoàn tất.');
+      return;
+    }
+
     setIsAnalyzing(true);
-    setStatus('Äang trÃ­ch xuáº¥t landmarks vÃ  nháº­n diá»‡n...');
+    setStatus('Đang trích xuất landmarks và nhận diện...');
     try {
       const formData = new FormData();
       formData.append('video', blob, filename);
@@ -370,10 +376,10 @@ export default function App() {
       });
       const data = (await response.json()) as ApiResponse;
       setResult(data);
-      setStatus(data.ok ? `ÄÃ£ phÃ¢n tÃ­ch ${data.validFrames ?? 0} frame há»£p lá»‡.` : data.error ?? 'Nháº­n diá»‡n tháº¥t báº¡i.');
+      setStatus(data.ok ? `Đã phân tích ${data.validFrames ?? 0} frame hợp lệ.` : data.error ?? 'Nhận diện thất bại.');
     } catch (error) {
-      setResult({ ok: false, error: 'KhÃ´ng gá»i Ä‘Æ°á»£c Python API local.' });
-      setStatus(error instanceof Error ? error.message : 'KhÃ´ng gá»i Ä‘Æ°á»£c Python API local.');
+      setResult({ ok: false, error: 'Không gọi được Python API.' });
+      setStatus(error instanceof Error ? error.message : 'Không gọi được Python API.');
     } finally {
       setIsAnalyzing(false);
     }
@@ -398,7 +404,7 @@ export default function App() {
     setDictionaryItems([]);
     setDictionaryTopics([]);
     setSelectedDictionaryItem(null);
-    setDictionaryStatus(text ? 'Äang tra cá»©u tá»« Ä‘iá»ƒn...' : 'HÃ£y nháº­p tá»« khÃ³a Ä‘á»ƒ tra cá»©u.');
+    setDictionaryStatus(text ? 'Đang tra cứu từ điển...' : 'Hãy nhập từ khóa để tra cứu.');
     if (!text) {
       setIsDictionaryLoading(false);
       return;
@@ -409,7 +415,7 @@ export default function App() {
       setDictionaryItems(cached.items ?? []);
       setDictionaryTopics(cached.topics ?? []);
       setSelectedDictionaryItem(cached.items?.[0] ?? null);
-      setDictionaryStatus(`TÃƒÂ¬m thÃ¡ÂºÂ¥y ${cached.total ?? 0} kÃ¡ÂºÂ¿t quÃ¡ÂºÂ£ tÃ¡Â»Â« bÃ¡Â»â„¢ nhÃ¡Â»â€º Ã„â€˜Ã¡Â»â€¡m.`);
+      setDictionaryStatus(`Tìm thấy ${cached.total ?? 0} kết quả từ bộ nhớ đệm.`);
       setIsDictionaryLoading(false);
       return;
     }
@@ -427,11 +433,11 @@ export default function App() {
       setDictionaryItems(data.items ?? []);
       setDictionaryTopics(data.topics ?? []);
       setSelectedDictionaryItem(data.items?.[0] ?? null);
-      setDictionaryStatus(`TÃ¬m tháº¥y ${data.total ?? 0} káº¿t quáº£. CÃ¡c tá»« trÃ¹ng vá»›i QIPEDC Ä‘Ã£ Ä‘Æ°á»£c bá» qua.`);
+      setDictionaryStatus(`Tìm thấy ${data.total ?? 0} kết quả. Các từ trùng với QIPEDC đã được bỏ qua.`);
     } catch (error) {
       setDictionaryItems([]);
       setSelectedDictionaryItem(null);
-      setDictionaryStatus(error instanceof Error ? error.message : 'KhÃ´ng tra cá»©u Ä‘Æ°á»£c tá»« Ä‘iá»ƒn.');
+      setDictionaryStatus(error instanceof Error ? error.message : 'Không tra cứu được từ điển.');
     } finally {
       setIsDictionaryLoading(false);
     }
@@ -448,22 +454,22 @@ export default function App() {
     if (!text) {
       setTextToSignWords([]);
       setCurrentSignIndex(0);
-      setTextToSignStatus('HÃ£y nháº­p má»™t cÃ¢u ngáº¯n Ä‘á»ƒ táº¡o video kÃ½ hiá»‡u.');
+      setTextToSignStatus('Hãy nhập một câu ngắn để tạo video ký hiệu.');
       return;
     }
 
     setIsTextToSignLoading(true);
     setTextToSignWords([]);
     setCurrentSignIndex(0);
-    setTextToSignStatus('Äang tÃ¡ch tá»« vÃ  tÃ¬m video tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn...');
+    setTextToSignStatus('Đang tách từ và tìm video từ các nguồn từ điển...');
     const cacheKey = text.toLocaleLowerCase('vi');
     const cached = textToSignResultCacheRef.current.get(cacheKey);
     if (cached) {
       const words = cached.words ?? [];
       setTextToSignWords(words);
       setCurrentSignIndex(0);
-      const missing = cached.missing?.length ? ` ThiÃ¡ÂºÂ¿u: ${cached.missing.join(', ')}.` : '';
-      setTextToSignStatus(`GhÃƒÂ©p Ã„â€˜Ã†Â°Ã¡Â»Â£c ${cached.matchedCount ?? 0}/${words.length} tÃ¡Â»Â« tÃ¡Â»Â« bÃ¡Â»â„¢ nhÃ¡Â»â€º Ã„â€˜Ã¡Â»â€¡m.${missing}`);
+      const missing = cached.missing?.length ? ` Thiếu: ${cached.missing.join(', ')}.` : '';
+      setTextToSignStatus(`Ghép được ${cached.matchedCount ?? 0}/${words.length} từ từ bộ nhớ đệm.${missing}`);
       setIsTextToSignLoading(false);
       return;
     }
@@ -472,19 +478,19 @@ export default function App() {
       const response = await fetch(`${apiBase}/api/text-to-sign?${params.toString()}`);
       const data = (await response.json()) as TextToSignResponse;
       if (!data.ok) {
-        throw new Error(data.error || 'KhÃ´ng táº¡o Ä‘Æ°á»£c chuá»—i kÃ½ hiá»‡u.');
+        throw new Error(data.error || 'Không tạo được chuỗi ký hiệu.');
       }
 
       textToSignResultCacheRef.current.set(cacheKey, data);
       const words = data.words ?? [];
       setTextToSignWords(words);
       setCurrentSignIndex(0);
-      const missing = data.missing?.length ? ` Thiáº¿u: ${data.missing.join(', ')}.` : '';
-      setTextToSignStatus(`GhÃ©p Ä‘Æ°á»£c ${data.matchedCount ?? 0}/${words.length} tá»« thÃ nh video kÃ½ hiá»‡u.${missing}`);
+      const missing = data.missing?.length ? ` Thiếu: ${data.missing.join(', ')}.` : '';
+      setTextToSignStatus(`Ghép được ${data.matchedCount ?? 0}/${words.length} từ thành video ký hiệu.${missing}`);
     } catch (error) {
       setTextToSignWords([]);
       setCurrentSignIndex(0);
-      setTextToSignStatus(error instanceof Error ? error.message : 'KhÃ´ng táº¡o Ä‘Æ°á»£c chuá»—i kÃ½ hiá»‡u.');
+      setTextToSignStatus(error instanceof Error ? error.message : 'Không tạo được chuỗi ký hiệu.');
     } finally {
       setIsTextToSignLoading(false);
     }
@@ -561,15 +567,15 @@ export default function App() {
             </div>
             <div>
               <h1 className="bg-gradient-to-r from-blue-600 to-cyan-500 bg-clip-text text-2xl font-black text-transparent">SignLink Language</h1>
-              <p className="text-sm text-slate-500">Nháº­n diá»‡n 472 tá»«, ghÃ©p cÃ¢u vÃ  phÃ¡t video kÃ½ hiá»‡u tá»« tá»« Ä‘iá»ƒn.</p>
+              <p className="text-sm text-slate-500">Nhận diện 472 từ, ghép câu và phát video ký hiệu từ từ điển.</p>
             </div>
           </div>
 
           <nav className="flex flex-wrap items-center gap-2 text-sm font-bold text-slate-600">
-            <a href="#home" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Trang chá»§</a>
-            <a href="#nhan-dien" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Nháº­n diá»‡n</a>
-            <a href="#text-to-sign" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Text sang kÃ½ hiá»‡u</a>
-            <a href="#tu-dien" className="rounded-2xl px-3 py-2 transition hover:bg-violet-50 hover:text-violet-700">Tá»« Ä‘iá»ƒn</a>
+            <a href="#home" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Trang chủ</a>
+            <a href="#nhan-dien" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Nhận diện</a>
+            <a href="#text-to-sign" className="rounded-2xl px-3 py-2 transition hover:bg-blue-50 hover:text-blue-700">Text sang ký hiệu</a>
+            <a href="#tu-dien" className="rounded-2xl px-3 py-2 transition hover:bg-violet-50 hover:text-violet-700">Từ điển</a>
           </nav>
 
           <button
@@ -589,25 +595,25 @@ export default function App() {
             <div>
               <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-blue-200 bg-blue-50 px-4 py-2 text-sm font-bold text-blue-700">
                 <HeartHandshake className="h-4 w-4" />
-                VÃ¬ cá»™ng Ä‘á»“ng ngÆ°á»i Ä‘iáº¿c vÃ  khiáº¿m thÃ­nh Viá»‡t Nam.
+                Vì cộng đồng người điếc và khiếm thính Việt Nam.
               </div>
               <h2 className="max-w-3xl text-4xl font-black leading-tight tracking-tight text-slate-950 md:text-5xl lg:text-6xl">
-                Cáº§u ná»‘i AI cho{' '}
+                Cầu nối AI cho{' '}
                 <span className="bg-gradient-to-r from-blue-600 via-violet-600 to-indigo-600 bg-clip-text text-transparent">
-                  ngÃ´n ngá»¯ kÃ½ hiá»‡u Viá»‡t Nam
+                  ngôn ngữ ký hiệu Việt Nam
                 </span>
               </h2>
               <p className="mt-6 max-w-2xl text-lg leading-relaxed text-slate-600">
-                Má»™t web local Ä‘á»ƒ nháº­n diá»‡n tá»«/cÃ¢u kÃ½ hiá»‡u, tra cá»©u video minh há»a vÃ  chuyá»ƒn vÄƒn báº£n thÃ nh chuá»—i video kÃ½ hiá»‡u tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn.
+                Một nền tảng web để nhận diện từ/câu ký hiệu, tra cứu video minh họa và chuyển văn bản thành chuỗi video ký hiệu từ các nguồn từ điển.
               </p>
               <div className="mt-8 flex flex-wrap gap-3">
                 <a href="#nhan-dien" className="inline-flex items-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-violet-500 px-6 py-3 text-sm font-black text-white shadow-xl shadow-blue-400/25 transition hover:scale-[1.02]">
                   <Camera className="h-4 w-4" />
-                  Báº¯t Ä‘áº§u nháº­n diá»‡n
+                  Bắt đầu nhận diện
                 </a>
                 <a href="#tu-dien" className="inline-flex items-center gap-2 rounded-2xl border border-violet-100 bg-white px-6 py-3 text-sm font-black text-violet-700 shadow-sm transition hover:bg-violet-50">
                   <BookOpen className="h-4 w-4" />
-                  Má»Ÿ tá»« Ä‘iá»ƒn
+                  Mở từ điển
                 </a>
               </div>
             </div>
@@ -617,7 +623,7 @@ export default function App() {
               <div className="relative rounded-[2rem] border border-white/70 bg-white p-6 shadow-2xl shadow-violet-900/10">
                 <div className="mb-5 flex items-center justify-between">
                   <div>
-                    <p className="text-xs font-black uppercase tracking-widest text-blue-600">Local AI System</p>
+                    <p className="text-xs font-black uppercase tracking-widest text-blue-600">AI Sign System</p>
                     <img
                       src="/brand/signlink-full-logo.png"
                       alt="SignLink Language"
@@ -625,14 +631,14 @@ export default function App() {
                     />
                   </div>
                   <div className="rounded-2xl bg-emerald-50 px-3 py-2 text-xs font-black text-emerald-700">
-                    {isBackendReady ? 'API sáºµn sÃ ng.' : 'Äang Ä‘á»£i API.'}
+                    {isBackendReady ? 'API sẵn sàng.' : 'Đang đợi API.'}
                   </div>
                 </div>
                 <div className="grid gap-3 sm:grid-cols-2">
                   {[
-                    { label: 'Nháº­n diá»‡n', value: '472 tá»«', icon: Camera },
-                    { label: 'Cháº¿ Ä‘á»™ cÃ¢u', value: 'Cáº¯t & ghÃ©p', icon: Sparkles },
-                    { label: 'Tá»« Ä‘iá»ƒn', value: '2 nguá»“n', icon: BookOpen },
+                    { label: 'Nhận diện', value: '472 từ', icon: Camera },
+                    { label: 'Chế độ câu', value: 'Cắt & ghép', icon: Sparkles },
+                    { label: 'Từ điển', value: '2 nguồn', icon: BookOpen },
                     { label: 'Text-to-Sign', value: 'Longest phrase', icon: Type },
                   ].map((item) => {
                     const Icon = item.icon;
@@ -660,8 +666,8 @@ export default function App() {
                 {!isCameraActive && (
                   <div className="absolute inset-0 flex flex-col items-center justify-center bg-gradient-to-br from-slate-900 via-slate-950 to-blue-950 px-6 text-center text-white">
                     <Camera className="h-16 w-16 text-cyan-300 opacity-80" />
-                    <p className="mt-4 text-xl font-bold">Báº­t camera Ä‘á»ƒ quay kÃ½ hiá»‡u.</p>
-                    <p className="mt-2 max-w-lg text-sm text-slate-300">Model word-level cáº§n má»™t chuá»—i hÃ nh Ä‘á»™ng rÃµ rÃ ng, vÃ¬ váº­y hÃ£y quay trá»n váº¹n má»™t tá»« hoáº·c má»™t cÃ¢u ngáº¯n.</p>
+                    <p className="mt-4 text-xl font-bold">Bật camera để quay ký hiệu.</p>
+                    <p className="mt-2 max-w-lg text-sm text-slate-300">Model word-level cần một chuỗi hành động rõ ràng, vì vậy hãy quay trọn vẹn một từ hoặc một câu ngắn.</p>
                   </div>
                 )}
                 <div className="absolute left-4 top-4 rounded-2xl bg-black/65 px-3 py-2 text-sm font-bold text-white backdrop-blur">
@@ -674,17 +680,17 @@ export default function App() {
             </div>
 
             <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-              <ActionButton icon={<Camera className="h-5 w-5" />} label="Báº­t camera" disabled={isCameraActive} onClick={startCamera} />
-              <ActionButton icon={<Play className="h-5 w-5" />} label="Báº¯t Ä‘áº§u quay" disabled={!isCameraActive || isRecording} onClick={startRecording} />
-              <ActionButton icon={<Square className="h-5 w-5" />} label="Dá»«ng quay" disabled={!isRecording} onClick={stopRecording} />
-              <ActionButton icon={<XCircle className="h-5 w-5" />} label="Táº¯t camera" disabled={!isCameraActive} onClick={stopCamera} />
+              <ActionButton icon={<Camera className="h-5 w-5" />} label="Bật camera" disabled={isCameraActive} onClick={startCamera} />
+              <ActionButton icon={<Play className="h-5 w-5" />} label="Bắt đầu quay" disabled={!isCameraActive || isRecording} onClick={startRecording} />
+              <ActionButton icon={<Square className="h-5 w-5" />} label="Dừng quay" disabled={!isRecording} onClick={stopRecording} />
+              <ActionButton icon={<XCircle className="h-5 w-5" />} label="Tắt camera" disabled={!isCameraActive} onClick={stopCamera} />
             </div>
 
             <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-xl shadow-blue-900/5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Cháº¿ Ä‘á»™ nháº­n diá»‡n.</h2>
-                  <p className="text-sm text-slate-600">Cháº¿ Ä‘á»™ cÃ¢u sáº½ tÃ¡ch video theo khoáº£ng nghá»‰, nháº­n diá»‡n tá»«ng tá»« vÃ  ghÃ©p thÃ nh cÃ¢u.</p>
+                  <h2 className="text-lg font-black text-slate-900">Chế độ nhận diện.</h2>
+                  <p className="text-sm text-slate-600">Chế độ câu sẽ tách video theo khoảng nghỉ, nhận diện từng từ và ghép thành câu.</p>
                 </div>
                 <div className="inline-flex rounded-2xl border border-blue-100 bg-blue-50 p-1">
                   <button
@@ -692,14 +698,14 @@ export default function App() {
                     onClick={() => setRecognitionMode('word')}
                     className={`rounded-xl px-4 py-2 text-sm font-bold transition ${recognitionMode === 'word' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-blue-700'}`}
                   >
-                    Tá»« Ä‘Æ¡n
+                    Từ đơn
                   </button>
                   <button
                     type="button"
                     onClick={() => setRecognitionMode('sentence')}
                     className={`rounded-xl px-4 py-2 text-sm font-bold transition ${recognitionMode === 'sentence' ? 'bg-white text-blue-700 shadow-sm' : 'text-slate-500 hover:text-blue-700'}`}
                   >
-                    CÃ¢u
+                    Câu
                   </button>
                 </div>
               </div>
@@ -708,8 +714,8 @@ export default function App() {
             <div className="rounded-3xl border border-blue-100 bg-white p-5 shadow-xl shadow-blue-900/5">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                  <h2 className="text-lg font-black text-slate-900">Upload video cÃ³ sáºµn.</h2>
-                  <p className="text-sm text-slate-600">Chá»n file MP4, AVI, MOV, MKV hoáº·c WEBM Ä‘á»ƒ backend local xá»­ lÃ½.</p>
+                  <h2 className="text-lg font-black text-slate-900">Upload video có sẵn.</h2>
+                  <p className="text-sm text-slate-600">Chọn file MP4, AVI, MOV, MKV hoặc WEBM để API xử lý.</p>
                 </div>
                 <div className="flex gap-2">
                   <input ref={fileInputRef} type="file" accept="video/*" className="hidden" onChange={handleUpload} />
@@ -719,7 +725,7 @@ export default function App() {
                     className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-4 py-2.5 text-sm font-bold text-white shadow-lg shadow-blue-400/20 transition hover:scale-[1.02]"
                   >
                     <Upload className="h-4 w-4" />
-                    Chá»n video
+                    Chọn video
                   </button>
                 </div>
               </div>
@@ -743,8 +749,8 @@ export default function App() {
                     <Type className="h-3.5 w-3.5" />
                     Text to Sign
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900">Text sang video kÃ½ hiá»‡u.</h2>
-                  <p className="text-sm text-slate-600">Nháº­p má»™t cÃ¢u ngáº¯n, há»‡ thá»‘ng sáº½ tÃ¡ch tá»« vÃ  phÃ¡t láº§n lÆ°á»£t video tá»« cÃ¡c nguá»“n tá»« Ä‘iá»ƒn.</p>
+                  <h2 className="text-2xl font-black text-slate-900">Text sang video ký hiệu.</h2>
+                  <p className="text-sm text-slate-600">Nhập một câu ngắn, hệ thống sẽ tách từ và phát lần lượt video từ các nguồn từ điển.</p>
                   <div className="mt-5 flex flex-col gap-3 lg:flex-row">
                     <input
                       value={textToSignInput}
@@ -753,7 +759,7 @@ export default function App() {
                         if (event.key === 'Enter') void buildTextToSign();
                       }}
                       className="min-w-0 flex-1 rounded-2xl border border-blue-100 bg-blue-50/50 px-5 py-4 text-base font-semibold outline-none transition focus:border-blue-400 focus:bg-white focus:ring-4 focus:ring-blue-100"
-                      placeholder="Vi du: báº¡n Ä‘i há»c"
+                      placeholder="Vi du: bạn đi học"
                     />
                     <button
                       type="button"
@@ -761,7 +767,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-blue-500 to-cyan-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-blue-400/20 transition hover:scale-[1.01]"
                     >
                       {isTextToSignLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Play className="h-4 w-4" />}
-                      Táº¡o video
+                      Tạo video
                     </button>
                   </div>
                   <div className="mt-4 flex flex-wrap gap-2">
@@ -787,7 +793,7 @@ export default function App() {
                     <div>
                       <div className="mb-3 flex items-center justify-between gap-3">
                         <div>
-                          <p className="text-sm font-semibold text-slate-500">Äang phÃ¡t tá»« {currentSignIndex + 1}/{playableTextToSignWords.length}.</p>
+                          <p className="text-sm font-semibold text-slate-500">Đang phát từ {currentSignIndex + 1}/{playableTextToSignWords.length}.</p>
                           <h3 className="text-2xl font-bold">{currentSignWord.item.word}</h3>
                         </div>
                         <button
@@ -795,7 +801,7 @@ export default function App() {
                           onClick={playNextSign}
                           className="rounded-2xl border border-blue-100 bg-white px-3 py-2 text-sm font-bold text-blue-700 shadow-sm"
                         >
-                          Tá»« tiáº¿p
+                          Từ tiếp
                         </button>
                       </div>
                       {currentSignWord.item.embedUrl ? (
@@ -823,7 +829,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="flex min-h-[26rem] items-center justify-center rounded-2xl bg-white/75 px-6 text-center text-base font-medium text-slate-500">
-                      ChÆ°a cÃ³ chuá»—i video. HÃ£y nháº­p cÃ¢u vÃ  báº¥m â€œTáº¡o videoâ€.
+                      Chưa có chuỗi video. Hãy nhập câu và bấm “Tạo video”.
                     </div>
                   )}
                 </div>
@@ -844,27 +850,27 @@ export default function App() {
                           <span className="flex items-center justify-between gap-3">
                             <span className="font-bold">{word.index}. {word.token}</span>
                             <span className={`text-xs font-bold ${word.matched ? 'text-emerald-700' : 'text-red-700'}`}>
-                              {word.matched ? (word.matchType === 'fuzzy' ? 'Gáº§n Ä‘Ãºng' : 'CÃ³ video') : 'ChÆ°a cÃ³'}
+                              {word.matched ? (word.matchType === 'fuzzy' ? 'Gần đúng' : 'Có video') : 'Chưa có'}
                             </span>
                           </span>
                           <span className="mt-1 block text-sm text-slate-600">
-                            {word.item?.word || (word.suggestions.length ? `Gá»£i Ã½: ${word.suggestions.map((item) => item.word).join(', ')}` : 'KhÃ´ng tÃ¬m tháº¥y trong tá»« Ä‘iá»ƒn.')}
+                            {word.item?.word || (word.suggestions.length ? `Gợi ý: ${word.suggestions.map((item) => item.word).join(', ')}` : 'Không tìm thấy trong từ điển.')}
                           </span>
                           {word.matchType === 'fuzzy' && (
                             <span className="mt-1 block text-xs font-bold text-amber-700">
-                              Äá»™ giá»‘ng nhau: {Math.round((word.score ?? word.item?.matchScore ?? 0) * 100)}%
+                              Độ giống nhau: {Math.round((word.score ?? word.item?.matchScore ?? 0) * 100)}%
                             </span>
                           )}
                           {word.item?.sourceName && (
                             <span className="mt-1 block text-xs font-bold text-slate-500">
-                              {word.item.sourceName}{word.item.region ? ` Â· ${word.item.region}` : ''}
+                              {word.item.sourceName}{word.item.region ? ` · ${word.item.region}` : ''}
                             </span>
                           )}
                         </button>
                       );
                     })
                   ) : (
-                    <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">ChÆ°a cÃ³ danh sÃ¡ch tá»« Ä‘á»ƒ phÃ¡t.</p>
+                    <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">Chưa có danh sách từ để phát.</p>
                   )}
                 </div>
               </div>
@@ -875,10 +881,10 @@ export default function App() {
                 <div className="flex-1">
                   <div className="mb-3 inline-flex items-center gap-2 rounded-full border border-violet-200 bg-violet-50 px-3 py-1.5 text-xs font-black text-violet-700">
                     <BookOpen className="h-3.5 w-3.5" />
-                    Tá»« Ä‘iá»ƒn
+                    Từ điển
                   </div>
-                  <h2 className="text-2xl font-black text-slate-900">Tá»« Ä‘iá»ƒn tra cá»©u.</h2>
-                  <p className="text-sm text-slate-600">Tra theo tá»« khÃ³a, Æ°u tiÃªn QIPEDC vÃ  bá» qua cÃ¡c tá»« trÃ¹ng tá»« nguá»“n má»Ÿ rá»™ng.</p>
+                  <h2 className="text-2xl font-black text-slate-900">Từ điển tra cứu.</h2>
+                  <p className="text-sm text-slate-600">Tra theo từ khóa, ưu tiên QIPEDC và bỏ qua các từ trùng từ nguồn mở rộng.</p>
                   <div className="mt-5 flex flex-col gap-3 lg:flex-row">
                     <input
                       value={dictionaryQuery}
@@ -887,7 +893,7 @@ export default function App() {
                         if (event.key === 'Enter') void searchDictionary();
                       }}
                       className="min-w-0 flex-1 rounded-2xl border border-violet-100 bg-violet-50/50 px-5 py-4 text-base font-semibold outline-none transition focus:border-violet-400 focus:bg-white focus:ring-4 focus:ring-violet-100"
-                      placeholder="Nháº­p tá»« cáº§n tÃ¬m, vÃ­ dá»¥: há»c, toÃ¡n, gia Ä‘Ã¬nh..."
+                      placeholder="Nhập từ cần tìm, ví dụ: học, toán, gia đình..."
                     />
                     <button
                       type="button"
@@ -895,7 +901,7 @@ export default function App() {
                       className="inline-flex items-center justify-center gap-2 rounded-2xl bg-gradient-to-r from-violet-500 to-indigo-500 px-6 py-4 text-sm font-black text-white shadow-lg shadow-violet-400/20 transition hover:scale-[1.01]"
                     >
                       {isDictionaryLoading ? <RefreshCw className="h-4 w-4 animate-spin" /> : <Search className="h-4 w-4" />}
-                      TÃ¬m
+                      Tìm
                     </button>
                   </div>
                 </div>
@@ -905,7 +911,7 @@ export default function App() {
                   onChange={(event) => setDictionaryTopic(event.target.value)}
                   className="rounded-2xl border border-violet-100 bg-white px-5 py-4 text-sm font-bold text-slate-700 shadow-sm"
                 >
-                  <option value="">Táº¥t cáº£ chá»§ Ä‘á»</option>
+                  <option value="">Tất cả chủ đề</option>
                   {dictionaryTopics.map((topic) => (
                     <option key={topic} value={topic}>
                       {topic}
@@ -951,14 +957,14 @@ export default function App() {
                         )}
                         <span className="min-w-0">
                           <span className="block text-lg font-black text-slate-900">{item.word}</span>
-                          <span className="mt-1 block text-xs font-semibold text-violet-700">{item.topic || item.lexicalType || 'KhÃ¡c'}</span>
-                          <span className="mt-1 block text-xs font-bold text-slate-500">{item.sourceName || 'QIPEDC'}{item.region ? ` Â· ${item.region}` : ''}</span>
-                          <span className="mt-1 line-clamp-2 block text-xs text-slate-600">{item.description || 'ChÆ°a cÃ³ giáº£i nghÄ©a.'}</span>
+                          <span className="mt-1 block text-xs font-semibold text-violet-700">{item.topic || item.lexicalType || 'Khác'}</span>
+                          <span className="mt-1 block text-xs font-bold text-slate-500">{item.sourceName || 'QIPEDC'}{item.region ? ` · ${item.region}` : ''}</span>
+                          <span className="mt-1 line-clamp-2 block text-xs text-slate-600">{item.description || 'Chưa có giải nghĩa.'}</span>
                         </span>
                       </button>
                     ))
                   ) : (
-                    <p className="rounded-2xl bg-violet-50 px-4 py-4 text-sm text-slate-600">ChÆ°a cÃ³ káº¿t quáº£ tá»« Ä‘iá»ƒn.</p>
+                    <p className="rounded-2xl bg-violet-50 px-4 py-4 text-sm text-slate-600">Chưa có kết quả từ điển.</p>
                   )}
                 </div>
 
@@ -968,14 +974,14 @@ export default function App() {
                       <div className="flex items-start justify-between gap-3">
                         <div>
                           <h3 className="text-4xl font-black text-slate-950">{selectedDictionaryItem.word}</h3>
-                          <p className="mt-1 text-sm font-semibold text-violet-700">{selectedDictionaryItem.topic || selectedDictionaryItem.lexicalType || 'KhÃ¡c'}</p>
+                          <p className="mt-1 text-sm font-semibold text-violet-700">{selectedDictionaryItem.topic || selectedDictionaryItem.lexicalType || 'Khác'}</p>
                         </div>
                         <a href={selectedDictionaryItem.sourceUrl} target="_blank" rel="noreferrer" className="rounded-2xl border border-violet-100 bg-white px-3 py-2 text-xs font-bold text-violet-700 shadow-sm">
                           {selectedDictionaryItem.sourceName || 'QIPEDC'}
                         </a>
                       </div>
                       <p className="mt-3 rounded-2xl bg-white px-4 py-3 text-sm leading-relaxed text-slate-700">
-                        {selectedDictionaryItem.description || 'Má»¥c tá»« nÃ y chÆ°a cÃ³ pháº§n giáº£i nghÄ©a.'}
+                        {selectedDictionaryItem.description || 'Mục từ này chưa có phần giải nghĩa.'}
                       </p>
                       {selectedDictionaryItem.embedUrl ? (
                         <iframe
@@ -997,7 +1003,7 @@ export default function App() {
                     </div>
                   ) : (
                     <div className="flex min-h-[30rem] items-center justify-center px-6 text-center text-base font-medium text-slate-500">
-                      Chá»n má»™t má»¥c tá»« Ä‘á»ƒ xem video kÃ½ hiá»‡u.
+                      Chọn một mục từ để xem video ký hiệu.
                     </div>
                   )}
                 </div>
@@ -1008,11 +1014,11 @@ export default function App() {
             <div className="rounded-3xl border border-emerald-100 bg-white p-6 shadow-xl shadow-emerald-900/5">
               <div className="flex items-center justify-between gap-3">
                 <div>
-                  <p className="text-sm font-bold uppercase tracking-wider text-emerald-600">{result?.mode === 'sentence' ? 'CÃ¢u nháº­n diá»‡n' : 'Káº¿t quáº£ tá»‘t nháº¥t'}</p>
+                  <p className="text-sm font-bold uppercase tracking-wider text-emerald-600">{result?.mode === 'sentence' ? 'Câu nhận diện' : 'Kết quả tốt nhất'}</p>
                   <h2 className="mt-2 text-4xl font-black text-slate-900">{result?.mode === 'sentence' ? sentenceText || '--' : bestPrediction?.label ?? '--'}</h2>
                 </div>
                 <div className="rounded-2xl border border-emerald-100 bg-emerald-50 px-4 py-3 text-right">
-                  <p className="text-xs font-bold text-emerald-700">{result?.mode === 'sentence' ? 'Sá»‘ tá»«' : 'Äá»™ tin cáº­y'}</p>
+                  <p className="text-xs font-bold text-emerald-700">{result?.mode === 'sentence' ? 'Số từ' : 'Độ tin cậy'}</p>
                   <p className="text-2xl font-bold text-slate-900">{confidenceText}</p>
                 </div>
               </div>
@@ -1028,7 +1034,7 @@ export default function App() {
             <div className="rounded-3xl border border-blue-100 bg-white p-6 shadow-xl shadow-blue-900/5">
               <div className="mb-4 flex items-center gap-2">
                 <Video className="h-5 w-5 text-blue-600" />
-                <h3 className="text-lg font-black">{result?.mode === 'sentence' ? 'CÃ¡c tá»« Ä‘Ã£ tÃ¡ch' : 'Top dá»± Ä‘oÃ¡n'}</h3>
+                <h3 className="text-lg font-black">{result?.mode === 'sentence' ? 'Các từ đã tách' : 'Top dự đoán'}</h3>
               </div>
 
               <div className="space-y-3">
@@ -1042,7 +1048,7 @@ export default function App() {
                     >
                       <div className="flex items-center justify-between gap-3">
                         <span className="font-bold">{word.index}. {word.label}</span>
-                        <span className="text-sm font-semibold text-slate-600">{Math.round(word.confidence * 100)}% Â· {word.frames} frame</span>
+                        <span className="text-sm font-semibold text-slate-600">{Math.round(word.confidence * 100)}% · {word.frames} frame</span>
                       </div>
                       <div className="mt-1 text-xs font-semibold text-slate-500">
                         Frame {word.startFrame ?? '--'} - {word.endFrame ?? '--'}
@@ -1071,7 +1077,7 @@ export default function App() {
                   ))
                 ) : (
                   <p className="rounded-2xl bg-blue-50 px-4 py-4 text-sm text-slate-600">
-                    ChÆ°a cÃ³ káº¿t quáº£. HÃ£y quay má»™t clip hoáº·c upload video Ä‘á»ƒ nháº­n diá»‡n.
+                    Chưa có kết quả. Hãy quay một clip hoặc upload video để nhận diện.
                   </p>
                 )}
               </div>
